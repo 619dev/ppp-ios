@@ -1,0 +1,225 @@
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useStore } from './store'
+import { useSocket } from './hooks/useSocket'
+import { loadFromIndexedDB } from './crypto/keystore'
+import { applyNativeProxy } from './api/proxy-bridge'
+import Login from './pages/Login'
+import Chats from './pages/Chats'
+import Chat from './pages/Chat'
+import Contacts from './pages/Contacts'
+import Discover from './pages/Discover'
+import Profile from './pages/Profile'
+import UserProfile from './pages/UserProfile'
+import GroupInfo from './pages/GroupInfo'
+import Moments from './pages/Moments'
+import Timeline from './pages/Timeline'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfUse from './pages/TermsOfUse'
+import TabBar from './components/TabBar'
+import CallOverlay from './components/CallOverlay'
+import GroupCallOverlay from './components/GroupCallOverlay'
+import NotificationToast from './components/NotificationToast'
+import { CallProvider } from './contexts/CallContext'
+import { GroupCallProvider } from './contexts/GroupCallContext'
+import { registerServiceWorker, subscribePush, isPushSubscribed } from './api/push'
+import { initOneSignal, loginOneSignal } from './api/onesignal'
+import { get, post } from './api/http'
+import { isNativePlatform } from './utils/platform'
+import { initNativePush } from './api/nativePush'
+import { initLocalNotifications } from './api/localNotification'
+import { useAutoDeleteCleanup } from './hooks/useAutoDeleteCleanup'
+
+function ProtectedLayout() {
+  useSocket()
+  useAutoDeleteCleanup()
+
+  // Auto-subscribe to push notifications when authenticated
+  useEffect(() => {
+    if (isNativePlatform()) {
+      // ── Capacitor Native: use APNS via Capacitor Push ──
+      initNativePush().catch(e => console.warn('[NativePush] Init failed:', e))
+      // ── Local Notifications: for showing system banners from WebSocket messages ──
+      // Works in the simulator too (unlike APNS remote push)
+      initLocalNotifications().catch(e => console.warn('[LocalNotification] Init failed:', e))
+    } else {
+      // ── Web/PWA: use Service Worker + Web Push + OneSignal ──
+      registerServiceWorker().then(() => {
+        console.log('[Push] Service worker ready')
+      }).catch(() => {})
+
+      // Web Push (VAPID)
+      ;(async () => {
+        try {
+          if ('Notification' in window && Notification.permission === 'default') {
+            await Notification.requestPermission()
+          }
+          if ('Notification' in window && Notification.permission === 'granted') {
+            const alreadySub = await isPushSubscribed()
+            if (!alreadySub) {
+              const ok = await subscribePush()
+              if (ok) console.log('[Push] Web Push subscribed successfully')
+            }
+          }
+        } catch (e) {
+          console.warn('[Push] Web Push subscription failed:', e)
+        }
+      })()
+
+      // OneSignal Web SDK v16
+      ;(async () => {
+        try {
+          const token = useStore.getState().token
+          if (!token) return
+          const userId = getUserIdFromToken(token)
+          if (!userId) return
+          const ok = await initOneSignal()
+          if (ok) {
+            await loginOneSignal(userId)
+            console.log('[OneSignal] ✅ Web SDK v16 fully initialized')
+          }
+        } catch (e) {
+          console.warn('[OneSignal] Web SDK init failed:', e)
+        }
+      })()
+
+      // OneSignal Median.co native wrapper fallback
+      let attempt = 0
+      const maxAttempts = 20
+      const tryRegisterMedian = () => {
+        const w = window as any
+        if (w.median?.onesignal?.onesignalInfo) {
+          w.median.onesignal.onesignalInfo((info: any) => {
+            if (info?.oneSignalUserId) {
+              post('/api/push/onesignal', {
+                player_id: info.oneSignalUserId,
+                platform: info.platform || 'ios',
+              }).catch(() => {})
+            }
+          })
+        } else if (w.gonative?.onesignal?.onesignalInfo) {
+          w.gonative.onesignal.onesignalInfo((info: any) => {
+            if (info?.oneSignalUserId) {
+              post('/api/push/onesignal', {
+                player_id: info.oneSignalUserId,
+                platform: info.platform || 'ios',
+              }).catch(() => {})
+            }
+          })
+        } else {
+          attempt++
+          if (attempt < maxAttempts) setTimeout(tryRegisterMedian, 500)
+        }
+      }
+      tryRegisterMedian()
+
+    }
+  }, [])
+
+
+
+  return (
+    <CallProvider>
+      <GroupCallProvider>
+        <Routes>
+          <Route path="/chats" element={<Chats />} />
+          <Route path="/chat/:id" element={<Chat />} />
+          <Route path="/contacts" element={<Contacts />} />
+          <Route path="/discover" element={<Discover />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/user/:id" element={<UserProfile />} />
+          <Route path="/group/:id" element={<GroupInfo />} />
+          <Route path="/moments" element={<Moments />} />
+          <Route path="/timeline" element={<Timeline />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfUse />} />
+          <Route path="*" element={<Navigate to="/chats" replace />} />
+        </Routes>
+        <TabBar />
+        <CallOverlay />
+        <GroupCallOverlay />
+        <NotificationToast />
+      </GroupCallProvider>
+    </CallProvider>
+  )
+}
+
+export default function App() {
+  const token = useStore(s => s.token)
+  const theme = useStore(s => s.theme)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
+  // Hydrate crypto keys from IndexedDB (tier 4 of 4-tier key persistence)
+  useEffect(() => {
+    loadFromIndexedDB().catch(() => {})
+  }, [])
+
+  // Apply persisted proxy settings on app startup (native iOS)
+  useEffect(() => {
+    const { proxyList, activeProxyId } = useStore.getState()
+    if (activeProxyId) {
+      const activeProxy = proxyList.find(p => p.id === activeProxyId)
+      if (activeProxy && activeProxy.host && activeProxy.port) {
+        applyNativeProxy(activeProxy)
+      }
+    }
+  }, [])
+
+  // ── Capacitor: Deep Link handler ──
+  // Handles paperphone:// URLs to navigate within the app
+  useEffect(() => {
+    if (!isNativePlatform()) return
+    let cleanup: (() => void) | undefined
+    import('@capacitor/app').then(({ App: CapApp }) => {
+      const listener = CapApp.addListener('appUrlOpen', (event) => {
+        console.log('[DeepLink] URL opened:', event.url)
+        // paperphone://chat/123  → /chat/123
+        // paperphone://user/abc  → /user/abc
+        // paperphone://add-friend?id=xxx → /contacts?add=xxx
+        try {
+          const url = new URL(event.url)
+          const path = url.pathname || url.host + (url.pathname || '')
+          if (path) {
+            window.location.href = '/' + path.replace(/^\/+/, '')
+          }
+        } catch {
+          // Fallback: strip scheme and navigate
+          const path = event.url.replace(/^paperphone:\/\//, '')
+          if (path) window.location.href = '/' + path
+        }
+      })
+      cleanup = () => { listener.then(l => l.remove()) }
+    })
+    return () => { cleanup?.() }
+  }, [])
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={token ? <Navigate to="/chats" replace /> : <Login />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfUse />} />
+        <Route path="/*" element={token ? <ProtectedLayout /> : <Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
+
+/**
+ * Decode user_id from a JWT token without a library.
+ * JWT format: header.payload.signature — we only need the payload.
+ */
+function getUserIdFromToken(token: string): string | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return payload.id || payload.sub || null
+  } catch {
+    return null
+  }
+}
+
