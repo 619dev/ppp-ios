@@ -186,7 +186,7 @@ APNS_RELAY_KEY=EzmpqftbsENaRUO6BTABxLV96q7RuEDyokXJr1DWdDjL54cLg7yXVUQqydCQvxrX
 
 ## 上游项目
 
-本项目是 [619dev/Paperphone-plus](https://github.com/619dev/Paperphone-plus) 的 iOS 客户端分支。上游项目包含完整的后端（Rust/Axum）和前端源码。
+本项目是 [619dev/PaperPhonePlus](https://github.com/619dev/Paperphone-plus) 的 iOS 客户端分支。上游项目包含完整的后端（Rust/Axum）和前端源码。
 
 如需部署完整系统（含后端服务器），请参阅上游项目文档：
 - 🚀 [Zeabur 一键云部署](https://zeabur.com/templates/SK6T93?referralCode=619dev)
@@ -199,7 +199,7 @@ APNS_RELAY_KEY=EzmpqftbsENaRUO6BTABxLV96q7RuEDyokXJr1DWdDjL54cLg7yXVUQqydCQvxrX
 
 ## 许可证
 
-本项目基于 [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE) 开源，与上游项目 [619dev/Paperphone-plus](https://github.com/619dev/Paperphone-plus) 保持一致。
+本项目基于 [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE) 开源，与上游项目 [619dev/PaperPhonePlus](https://github.com/619dev/Paperphone-plus) 保持一致。
 
 简而言之：
 - ✅ 个人和企业均可自由部署和使用

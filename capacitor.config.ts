@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
   appId: 'com.fm619tech.paperphoneplus',
-  appName: 'PaperPhone',
+  appName: 'PaperPhonePlus',
   webDir: 'dist',
   server: {
     // HTTPS scheme is required for WebRTC getUserMedia() and crypto.subtle

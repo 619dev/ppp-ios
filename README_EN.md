@@ -186,7 +186,7 @@ APNS_RELAY_KEY=EzmpqftbsENaRUO6BTABxLV96q7RuEDyokXJr1DWdDjL54cLg7yXVUQqydCQvxrX
 
 ## Upstream Project
 
-This project is the iOS client fork of [619dev/Paperphone-plus](https://github.com/619dev/Paperphone-plus). The upstream project contains the full backend (Rust/Axum) and frontend source code.
+This project is the iOS client fork of [619dev/PaperPhonePlus](https://github.com/619dev/Paperphone-plus). The upstream project contains the full backend (Rust/Axum) and frontend source code.
 
 For full system deployment (including backend server), please refer to the upstream documentation:
 - 🚀 [Zeabur One-click Deployment](https://zeabur.com/templates/SK6T93?referralCode=619dev)
@@ -199,7 +199,7 @@ For full system deployment (including backend server), please refer to the upstr
 
 ## License
 
-This project is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE), consistent with the upstream project [619dev/Paperphone-plus](https://github.com/619dev/Paperphone-plus).
+This project is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE), consistent with the upstream project [619dev/PaperPhonePlus](https://github.com/619dev/Paperphone-plus).
 
 In summary:
 - ✅ Free to use and deploy for individuals and organizations

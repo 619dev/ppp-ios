@@ -1,5 +1,5 @@
 export const en: Record<string, string> = {
-  'app.name': 'PaperPhone',
+  'app.name': 'PaperPhonePlus',
   'auth.login': 'Log In',
   'auth.register': 'Sign Up',
   'auth.username': 'Username',

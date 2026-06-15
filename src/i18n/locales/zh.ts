@@ -1,6 +1,6 @@
 export const zh: Record<string, string> = {
   // Auth
-  'app.name': 'PaperPhone',
+  'app.name': 'PaperPhonePlus',
   'auth.login': '登录',
   'auth.register': '注册',
   'auth.username': '用户名',
