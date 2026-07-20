@@ -28,11 +28,21 @@ import { get, post } from './api/http'
 import { isNativePlatform } from './utils/platform'
 import { initNativePush } from './api/nativePush'
 import { initLocalNotifications } from './api/localNotification'
+import { setAppBadgeCount } from './api/appBadge'
 import { useAutoDeleteCleanup } from './hooks/useAutoDeleteCleanup'
 
 function ProtectedLayout() {
   useSocket()
   useAutoDeleteCleanup()
+  const totalUnread = useStore(state =>
+    Object.values(state.unread).reduce((total, count) => total + count, 0)
+  )
+
+  // iOS does not derive its home-screen badge from our React state. Keep the
+  // native badge synchronized whenever a message is received or a chat is read.
+  useEffect(() => {
+    setAppBadgeCount(totalUnread)
+  }, [totalUnread])
 
   // Auto-subscribe to push notifications when authenticated
   useEffect(() => {
@@ -222,4 +232,3 @@ function getUserIdFromToken(token: string): string | null {
     return null
   }
 }
-

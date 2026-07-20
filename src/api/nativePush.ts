@@ -7,6 +7,8 @@
  */
 import { PushNotifications } from '@capacitor/push-notifications'
 import { post } from './http'
+import { useStore } from '../store'
+import { setAppBadgeCount } from './appBadge'
 
 let registered = false
 
@@ -62,8 +64,11 @@ export async function initNativePush(): Promise<void> {
     // Listen for incoming push when app is in foreground
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
       console.log('[NativePush] Received in foreground:', notification)
-      // The notification is automatically shown by the system.
-      // If you want custom handling, you can process it here.
+      // APNS payloads may contain a fixed badge value (commonly 1). Restore the
+      // authoritative unread total after iOS applies the push payload.
+      const unread = Object.values(useStore.getState().unread)
+        .reduce((total, count) => total + count, 0)
+      setAppBadgeCount(unread)
     })
 
     // Listen for push notification tap (app opened from notification)
