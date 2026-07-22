@@ -23,15 +23,18 @@
 | 🔐 端对端加密 | 无状态 ECDH + XSalsa20-Poly1305，逐消息临时密钥，前向保密 |
 | 🛡️ 抗量子加密 | 集成 CRYSTALS-Kyber 后量子密钥封装 |
 | 🗝️ 零知识服务器 | 私钥仅在设备本地，四层持久化（内存 → localStorage → sessionStorage → IndexedDB） |
-| 📹 视频/语音通话 | WebRTC P2P (1:1) + Mesh (多人)，Cloudflare TURN 穿透 |
+| 📹 视频/语音通话 | WebRTC P2P（1:1）+ LiveKit SFU（群会议），支持语音与视频会议 |
+| 🧑‍🏫 会议管理 | 主持人全员静音、自由讨论/讲课模式切换、参会者列表与发言状态 |
 | 🎙️ 实时变声 | 3 档可选 (0.8x / 1.0x / 1.2x)，基于 Web Audio API |
 | 👥 群聊 | 最多 2000 人，支持加密/未加密两种模式 |
 | 💬 消息 | 文字、图片、视频、文档、语音消息、Emoji 面板、Telegram 贴纸包 |
 | 🌐 朋友圈 | 发动态、点赞、评论、标签可见性控制 |
 | 📰 时间线 | 小红书风格双列瀑布流，支持匿名发帖 |
 | 🔔 APNS 推送 | Apple Push Notification Service 原生推送 |
+| 🔴 应用角标 | iOS 主屏角标与应用内未读消息数自动同步 |
 | 🌍 多语言 | 中/英/日/韩/法/德/俄/西，8 种语言 |
 | 🔑 两步验证 | TOTP (Google Authenticator 兼容) + 恢复码 |
+| 📱 会话保持 | 网络中断、代理或 IP 变化时保留登录，仅在服务端明确撤销后退出 |
 
 ---
 
@@ -43,7 +46,8 @@
   Zustand — 状态管理
   libsodium-wrappers-sumo — Curve25519 / XSalsa20-Poly1305 (WebAssembly)
   crystals-kyber-js — 后量子密钥封装
-  WebRTC API — 视频/语音通话
+  WebRTC API — 1:1 视频/语音通话
+  LiveKit Client — 基于 SFU 的可扩展群会议
   Web Audio API — 实时变声
 
 原生层 (Capacitor 8)
@@ -53,6 +57,7 @@
   @capacitor/splash-screen — 启动屏
   @capacitor/status-bar — 状态栏控制
   @capacitor/app — App 生命周期
+  @capawesome/capacitor-badge — iOS 应用角标同步
 ```
 
 ---
@@ -181,6 +186,24 @@ APNS_SANDBOX=false    # TestFlight 用 true，App Store 用 false
 APNS_RELAY_URL=https://619.chat
 APNS_RELAY_KEY=EzmpqftbsENaRUO6BTABxLV96q7RuEDyokXJr1DWdDjL54cLg7yXVUQqydCQvxrX
 ```
+
+应用收到推送、接收新消息或将会话标记为已读时，会重新计算未读消息总数并同步 iOS 主屏角标。
+
+---
+
+## 群会议说明
+
+群语音和群视频会议使用 LiveKit SFU，每台设备只需维持一条上行连接，更适合多人会议。会议令牌和人数上限由后端的 `/api/calls/meeting-token` 接口返回，因此部署时需要同时配置后端的 LiveKit 服务。
+
+- 发起人自动成为主持人，可执行全员静音。
+- 自由讨论模式允许参会者自行开麦；切换到讲课模式后，非主持人会被静音且不能自行解除。
+- 客户端启用了 adaptive stream 和 dynacast，以减少多人视频会议中的带宽消耗。
+
+---
+
+## 登录会话行为
+
+普通网络中断、WebSocket 重连、代理切换、IP 变化或单次 HTTP 401 不会立即清除本地登录状态。客户端仅在收到服务端明确的会话撤销、强制退出、账号停用或删除信号后退出登录。
 
 ---
 

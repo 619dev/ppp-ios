@@ -23,15 +23,18 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 | 🔐 End-to-End Encryption | Stateless ECDH + XSalsa20-Poly1305, per-message ephemeral keys, forward secrecy |
 | 🛡️ Post-Quantum Encryption | Integrated CRYSTALS-Kyber post-quantum key encapsulation |
 | 🗝️ Zero-Knowledge Server | Private keys stored only on device, 4-layer persistence (Memory → localStorage → sessionStorage → IndexedDB) |
-| 📹 Video/Voice Calls | WebRTC P2P (1:1) + Mesh (multi-party), Cloudflare TURN traversal |
+| 📹 Video/Voice Calls | WebRTC P2P (1:1) + LiveKit SFU (group meetings), with voice and video support |
+| 🧑‍🏫 Meeting Controls | Host mute-all, discussion/lecture modes, participant list, and speaking status |
 | 🎙️ Real-time Voice Changer | 3 modes (0.8x / 1.0x / 1.2x), powered by Web Audio API |
 | 👥 Group Chat | Up to 2000 members, encrypted & unencrypted modes |
 | 💬 Messaging | Text, images, videos, documents, voice messages, emoji panel, Telegram sticker packs |
 | 🌐 Moments | Post updates, likes, comments, tag-based visibility control |
 | 📰 Timeline | Xiaohongshu-style waterfall feed, anonymous posting supported |
 | 🔔 APNS Push | Native Apple Push Notification Service |
+| 🔴 App Badge | Keeps the iOS home-screen badge synchronized with the in-app unread count |
 | 🌍 Multi-language | Chinese, English, Japanese, Korean, French, German, Russian, Spanish |
 | 🔑 Two-Factor Auth | TOTP (Google Authenticator compatible) + recovery codes |
+| 📱 Persistent Sessions | Keeps users signed in across network, proxy, or IP changes; signs out only on explicit server revocation |
 
 ---
 
@@ -43,7 +46,8 @@ Frontend
   Zustand — State management
   libsodium-wrappers-sumo — Curve25519 / XSalsa20-Poly1305 (WebAssembly)
   crystals-kyber-js — Post-quantum key encapsulation
-  WebRTC API — Video/voice calls
+  WebRTC API — 1:1 video/voice calls
+  LiveKit Client — Scalable SFU-based group meetings
   Web Audio API — Real-time voice modulation
 
 Native Layer (Capacitor 8)
@@ -53,6 +57,7 @@ Native Layer (Capacitor 8)
   @capacitor/splash-screen — Splash screen
   @capacitor/status-bar — Status bar control
   @capacitor/app — App lifecycle
+  @capawesome/capacitor-badge — iOS app badge synchronization
 ```
 
 ---
@@ -181,6 +186,24 @@ Or use the official push relay (no Apple credentials needed):
 APNS_RELAY_URL=https://619.chat
 APNS_RELAY_KEY=EzmpqftbsENaRUO6BTABxLV96q7RuEDyokXJr1DWdDjL54cLg7yXVUQqydCQvxrX
 ```
+
+When a push or message arrives, or a conversation is marked as read, the app recalculates the total unread count and synchronizes the iOS home-screen badge.
+
+---
+
+## Group Meetings
+
+Group voice and video meetings use a LiveKit SFU, so each device maintains only one upstream connection and can scale better for multi-party calls. The backend `/api/calls/meeting-token` endpoint supplies meeting credentials and participant limits; a full deployment therefore requires a LiveKit service configured on the backend.
+
+- The meeting creator becomes the host and can mute everyone.
+- In discussion mode, participants can unmute themselves. Switching to lecture mode mutes non-host participants and prevents them from unmuting.
+- The client enables adaptive stream and dynacast to reduce bandwidth usage in multi-party video meetings.
+
+---
+
+## Login Session Behavior
+
+Ordinary network loss, WebSocket reconnection, proxy changes, IP changes, or a single HTTP 401 response do not immediately clear local login state. The client signs out only after an explicit server signal for session revocation, forced logout, account disablement, or account deletion.
 
 ---
 
