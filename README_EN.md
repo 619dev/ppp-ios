@@ -8,6 +8,15 @@
 
 ---
 
+## What's New in 2.2.0
+
+- Added complete localization for group video and voice meetings in all eight supported languages.
+- Localized meeting invitations, connection status, participant and host controls, errors, and system notifications.
+- Improved accessibility labels and local-video mute detection on iOS.
+- Preserved server-provided meeting capacity limits and refined the iOS build integration.
+
+---
+
 ## About
 
 This repository is the **iOS native client** fork of [PaperPhone+](https://github.com/619dev/Paperphone-plus). PaperPhone+ is a WeChat-style end-to-end encrypted instant messaging application featuring stateless ECDH + XSalsa20-Poly1305 per-message encryption with forward secrecy.
