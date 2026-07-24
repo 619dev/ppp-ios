@@ -8,8 +8,10 @@
 
 ---
 
-## What's New in 2.2.2
+## What's New in 2.2.3
 
+- Fixed Chinese username lookup when adding friends by preventing IME candidate confirmation from triggering a premature search.
+- Search terms are now normalized to Unicode NFC and encoded as standard UTF-8 query parameters.
 - Fixed QR scanning when `BarcodeDetector` is unavailable in iOS WKWebView by adding a `jsQR` camera-frame decoding fallback.
 - Expanded offline caching so contacts, groups, chat history, Moments, Timeline posts, and related media remain available without a network connection.
 - Increased the local message cache from 200 to 2,000 messages per conversation and added a one-tap local cache cleanup option in Settings.
