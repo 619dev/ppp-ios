@@ -8,8 +8,11 @@
 
 ---
 
-## What's New in 2.2.0
+## What's New in 2.2.2
 
+- Fixed QR scanning when `BarcodeDetector` is unavailable in iOS WKWebView by adding a `jsQR` camera-frame decoding fallback.
+- Expanded offline caching so contacts, groups, chat history, Moments, Timeline posts, and related media remain available without a network connection.
+- Increased the local message cache from 200 to 2,000 messages per conversation and added a one-tap local cache cleanup option in Settings.
 - Added complete localization for group video and voice meetings in all eight supported languages.
 - Localized meeting invitations, connection status, participant and host controls, errors, and system notifications.
 - Improved accessibility labels and local-video mute detection on iOS.
@@ -37,6 +40,8 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 | 🎙️ Real-time Voice Changer | 3 modes (0.8x / 1.0x / 1.2x), powered by Web Audio API |
 | 👥 Group Chat | Up to 2000 members, encrypted & unencrypted modes |
 | 💬 Messaging | Text, images, videos, documents, voice messages, emoji panel, Telegram sticker packs |
+| 📴 Offline Browsing | Caches contacts, groups, chat history, Moments, Timeline posts, and media, with one-tap cleanup |
+| 📷 QR Scanner | Uses native `BarcodeDetector` with a `jsQR` fallback for iOS WKWebView |
 | 🌐 Moments | Post updates, likes, comments, tag-based visibility control |
 | 📰 Timeline | Xiaohongshu-style waterfall feed, anonymous posting supported |
 | 🔔 APNS Push | Native Apple Push Notification Service |
@@ -58,6 +63,7 @@ Frontend
   WebRTC API — 1:1 video/voice calls
   LiveKit Client — Scalable SFU-based group meetings
   Web Audio API — Real-time voice modulation
+  jsQR — QR decoding fallback for iOS WKWebView
 
 Native Layer (Capacitor 8)
   @capacitor/ios — iOS native bridge
