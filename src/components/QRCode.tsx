@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
+import jsQR from 'jsqr'
 
 /**
  * Renders a QR code from the given data string.
@@ -76,6 +77,8 @@ export function QRScanner({ onScan, onClose }: { onScan: (data: string) => void;
   useEffect(() => {
     let active = true
     let animFrame: number
+    let lastFallbackScan = 0
+    let scanCompleted = false
 
     const start = async () => {
       try {
@@ -94,25 +97,47 @@ export function QRScanner({ onScan, onClose }: { onScan: (data: string) => void;
           : null
 
         const scan = async () => {
-          if (!active || !videoRef.current || videoRef.current.readyState < 2) {
+          if (!active || scanCompleted || !videoRef.current || videoRef.current.readyState < 2) {
             animFrame = requestAnimationFrame(scan)
             return
           }
 
+          let value = ''
           if (detector) {
             try {
               const barcodes = await detector.detect(videoRef.current)
-              for (const bc of barcodes) {
-                if (bc.rawValue) {
-                  onScan(bc.rawValue)
-                  return
-                }
-              }
+              value = barcodes.find((bc: any) => bc.rawValue)?.rawValue || ''
             } catch {}
-          } else {
-            // Fallback: draw to canvas and use jsQR-style approach
-            // Since we don't want an extra dep, we'll just rely on BarcodeDetector
-            // which is supported in most modern browsers
+          }
+
+          // BarcodeDetector is unavailable in iOS WKWebView. Decode camera frames
+          // with jsQR there (and as a fallback if the native detector misses).
+          const now = performance.now()
+          if (!value && now - lastFallbackScan >= 120 && canvasRef.current) {
+            lastFallbackScan = now
+            const video = videoRef.current
+            const canvas = canvasRef.current
+            const width = video.videoWidth
+            const height = video.videoHeight
+            if (width > 0 && height > 0) {
+              canvas.width = width
+              canvas.height = height
+              const context = canvas.getContext('2d', { willReadFrequently: true })
+              if (context) {
+                context.drawImage(video, 0, 0, width, height)
+                const image = context.getImageData(0, 0, width, height)
+                value = jsQR(image.data, width, height, {
+                  inversionAttempts: 'attemptBoth',
+                })?.data || ''
+              }
+            }
+          }
+
+          if (value) {
+            scanCompleted = true
+            streamRef.current?.getTracks().forEach(track => track.stop())
+            onScan(value.trim())
+            return
           }
           animFrame = requestAnimationFrame(scan)
         }
