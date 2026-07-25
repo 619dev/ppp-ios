@@ -8,8 +8,9 @@
 
 ---
 
-## What's New in 2.2.4
+## What's New in 2.2.5
 
+- Fixed picture-in-picture for private video calls by rebinding existing local and remote media streams whenever video elements mount or are recreated.
 - Friend search now provides clear feedback when no users match and displays the error reason when a search request fails.
 - Fixed Chinese username lookup when adding friends by preventing IME candidate confirmation from triggering a premature search.
 - Search terms are now normalized to Unicode NFC and encoded as standard UTF-8 query parameters.
