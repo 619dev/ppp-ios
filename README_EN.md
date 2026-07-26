@@ -8,8 +8,9 @@
 
 ---
 
-## What's New in 2.2.5
+## What's New in 2.2.6
 
+- Fixed incorrect unread counts by preventing replayed offline messages from being counted again after WebSocket reconnects and clearing the conversation count when a chat is opened from a push notification, in-app notification, or deep link.
 - Fixed picture-in-picture for private video calls by rebinding existing local and remote media streams whenever video elements mount or are recreated.
 - Friend search now provides clear feedback when no users match and displays the error reason when a search request fails.
 - Fixed Chinese username lookup when adding friends by preventing IME candidate confirmation from triggering a premature search.
