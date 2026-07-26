@@ -8,8 +8,12 @@
 
 ---
 
-## What's New in 2.2.6
+## What's New in 2.2.7
 
+- Fixed silent private voice calls by adding a dedicated remote-audio player while preventing duplicate audio during video calls.
+- Fixed real-time voice effects by creating the audio processing chain only when an effect is enabled and restoring the original microphone track in normal mode.
+- Improved the private video-call layout with a compact contact and status card that keeps more of the remote video visible.
+- Redesigned the chat composer with an auto-growing text area, better-sized controls, a cleaner attachment panel, and safer sending behavior while using an IME.
 - Fixed incorrect unread counts by preventing replayed offline messages from being counted again after WebSocket reconnects and clearing the conversation count when a chat is opened from a push notification, in-app notification, or deep link.
 - Fixed picture-in-picture for private video calls by rebinding existing local and remote media streams whenever video elements mount or are recreated.
 - Friend search now provides clear feedback when no users match and displays the error reason when a search request fails.
