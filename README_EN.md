@@ -8,24 +8,13 @@
 
 ---
 
-## What's New in 2.2.7
+## What's New in 2.2.8
 
-- Fixed silent private voice calls by adding a dedicated remote-audio player while preventing duplicate audio during video calls.
-- Fixed real-time voice effects by creating the audio processing chain only when an effect is enabled and restoring the original microphone track in normal mode.
-- Improved the private video-call layout with a compact contact and status card that keeps more of the remote video visible.
-- Redesigned the chat composer with an auto-growing text area, better-sized controls, a cleaner attachment panel, and safer sending behavior while using an IME.
-- Fixed incorrect unread counts by preventing replayed offline messages from being counted again after WebSocket reconnects and clearing the conversation count when a chat is opened from a push notification, in-app notification, or deep link.
-- Fixed picture-in-picture for private video calls by rebinding existing local and remote media streams whenever video elements mount or are recreated.
-- Friend search now provides clear feedback when no users match and displays the error reason when a search request fails.
-- Fixed Chinese username lookup when adding friends by preventing IME candidate confirmation from triggering a premature search.
-- Search terms are now normalized to Unicode NFC and encoded as standard UTF-8 query parameters.
-- Fixed QR scanning when `BarcodeDetector` is unavailable in iOS WKWebView by adding a `jsQR` camera-frame decoding fallback.
-- Expanded offline caching so contacts, groups, chat history, Moments, Timeline posts, and related media remain available without a network connection.
-- Increased the local message cache from 200 to 2,000 messages per conversation and added a one-tap local cache cleanup option in Settings.
-- Added complete localization for group video and voice meetings in all eight supported languages.
-- Localized meeting invitations, connection status, participant and host controls, errors, and system notifications.
-- Improved accessibility labels and local-video mute detection on iOS.
-- Preserved server-provided meeting capacity limits and refined the iOS build integration.
+- Added quoted replies for text and media messages, including an original-message preview and tap-to-locate navigation.
+- Migrated private voice and video calls fully to the LiveKit SFU for improved setup, weak-network reconnection, and cross-network reliability.
+- Updated conversation and notification previews to decode quoted-message payloads instead of exposing internal data.
+- Added the current app version to Settings.
+- Localized quoted-reply controls in all eight supported languages.
 
 ---
 
@@ -44,7 +33,7 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 | 🔐 End-to-End Encryption | Stateless ECDH + XSalsa20-Poly1305, per-message ephemeral keys, forward secrecy |
 | 🛡️ Post-Quantum Encryption | Integrated CRYSTALS-Kyber post-quantum key encapsulation |
 | 🗝️ Zero-Knowledge Server | Private keys stored only on device, 4-layer persistence (Memory → localStorage → sessionStorage → IndexedDB) |
-| 📹 Video/Voice Calls | WebRTC P2P (1:1) + LiveKit SFU (group meetings), with voice and video support |
+| 📹 Video/Voice Calls | LiveKit SFU-based private and group voice/video calls |
 | 🧑‍🏫 Meeting Controls | Host mute-all, discussion/lecture modes, participant list, and speaking status |
 | 🎙️ Real-time Voice Changer | 3 modes (0.8x / 1.0x / 1.2x), powered by Web Audio API |
 | 👥 Group Chat | Up to 2000 members, encrypted & unencrypted modes |
@@ -69,8 +58,7 @@ Frontend
   Zustand — State management
   libsodium-wrappers-sumo — Curve25519 / XSalsa20-Poly1305 (WebAssembly)
   crystals-kyber-js — Post-quantum key encapsulation
-  WebRTC API — 1:1 video/voice calls
-  LiveKit Client — Scalable SFU-based group meetings
+  LiveKit Client — SFU-based private and group voice/video calls
   Web Audio API — Real-time voice modulation
   jsQR — QR decoding fallback for iOS WKWebView
 
