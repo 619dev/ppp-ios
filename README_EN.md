@@ -8,13 +8,12 @@
 
 ---
 
-## What's New in 2.2.8
+## What's New in 2.2.9
 
-- Added quoted replies for text and media messages, including an original-message preview and tap-to-locate navigation.
-- Migrated private voice and video calls fully to the LiveKit SFU for improved setup, weak-network reconnection, and cross-network reliability.
-- Updated conversation and notification previews to decode quoted-message payloads instead of exposing internal data.
-- Added the current app version to Settings.
-- Localized quoted-reply controls in all eight supported languages.
+- Added persistent sticker caching for pack lists, pack metadata, and sticker media, keeping previously loaded content available on weak or offline connections.
+- Sticker media now uses stable `file_id` requests and a dedicated cache to reduce repeat downloads across static, animated, and video stickers.
+- Stickers are cached before sending, and stickers in chat messages now load from the local cache first.
+- The local cache cleanup action now removes the sticker cache as well.
 
 ---
 
