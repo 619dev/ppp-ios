@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useStore } from '../store'
-import { connectWs, disconnectWs, onWs } from '../api/socket'
+import { connectWs, disconnectWs, forceReconnect, onWs } from '../api/socket'
+import { syncMessages } from '../api/sync'
 import { endSession } from '../utils/session'
 import { useNotificationStore } from '../store/notificationStore'
 import { playMessageSound, showBrowserNotification, getMessagePreview } from '../utils/notification'
@@ -14,28 +15,30 @@ import { get } from '../api/http'
 import { decodeMessagePayload } from '../utils/messagePayload'
 
 /**
- * Fetch all sender keys for a group from the server and store them locally.
+ * Try to fetch and store sender keys from the server for a given group.
+ * Returns true if at least one new key was imported.
  */
-async function fetchAndStoreSenderKeys(groupId: string) {
+async function fetchAndStoreSenderKeys(groupId: string): Promise<boolean> {
+  const keys = getKeys()
+  if (!keys) return false
   try {
-    const keys = getKeys()
-    if (!keys) return false
     const skData = await get(`/api/groups/${groupId}/sender-keys`)
-    if (skData?.keys && Array.isArray(skData.keys)) {
-      for (const k of skData.keys) {
-        // Always try to decrypt the latest distribution — don't skip if cached.
-        // Cached keys may be stale after identity key changes (logout/login cycle).
-        try {
-          const senderKey = await receiveSenderKey(
-            k.encrypted_key, k.header, keys.ik_priv, null
-          )
-          storeSenderKey(groupId, k.from_id, senderKey, k.key_version || 1)
-        } catch (err) {
-          console.warn(`[useSocket] Failed to decrypt sender key from ${k.from_id} for group ${groupId}:`, err)
-        }
+    if (!skData?.keys || !Array.isArray(skData.keys)) return false
+    let imported = false
+    for (const k of skData.keys) {
+      // Always try to decrypt the latest distribution — don't skip if cached.
+      // Cached keys may be stale after identity key changes (logout/login cycle).
+      try {
+        const senderKey = await receiveSenderKey(
+          k.encrypted_key, k.header, keys.ik_priv, null
+        )
+        storeSenderKey(groupId, k.from_id, senderKey, k.key_version || 1)
+        imported = true
+      } catch (err) {
+        console.warn(`[useSocket] Failed to decrypt sender key from ${k.from_id} for group ${groupId}:`, err)
       }
     }
-    return true
+    return imported
   } catch (err) {
     console.warn(`[useSocket] Failed to fetch sender keys for group ${groupId}:`, err)
     return false
@@ -74,10 +77,22 @@ export function useSocket() {
 
     connectWs()
 
-    // A dropped socket, failed auth attempt, or IP change only reconnects.
-    // Logout is reserved for an explicit server-side session termination.
+    const recover = () => forceReconnect()
+    const onVisible = () => { if (document.visibilityState === 'visible') recover() }
+    window.addEventListener('online', recover)
+    window.addEventListener('pageshow', recover)
+    window.addEventListener('paperphone:network-changed', recover)
+    document.addEventListener('visibilitychange', onVisible)
+    let removeNativeListener: (() => void) | undefined
+    import('@capacitor/app').then(({ App }) => App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) recover()
+    })).then(handle => { removeNativeListener = () => void handle.remove() }).catch(() => {})
+
+    // Network loss, failed auth, and address changes only reconnect. The local
+    // login ends solely when the server sends an explicit termination event.
     const logoutSignals = ['logout', 'force_logout', 'session_revoked', 'session_terminated']
     const unsubLogoutSignals = logoutSignals.map(type => onWs(type, () => endSession(type)))
+    const unsubAuthOk = onWs('auth_ok', () => syncMessages().catch(err => console.warn('[Sync] catch-up failed:', err)))
 
     // Listen for incoming messages and route to store
     const unsubMsg = onWs('message', async (data) => {
@@ -212,8 +227,6 @@ export function useSocket() {
           // Play sound
           playMessageSound()
 
-          // Native iOS: show local notification (system banner)
-          // This works in the simulator too, unlike APNS push
           if (isNativePlatform()) {
             showLocalNotification({
               title: chatName,
@@ -223,7 +236,7 @@ export function useSocket() {
             })
           }
 
-          // Browser notification (only if tab hidden, web only)
+          // Browser notification (only if tab hidden)
           showBrowserNotification(
             chatName,
             group ? `${senderName}: ${preview}` : preview,
@@ -243,7 +256,7 @@ export function useSocket() {
     // Listen for ack: add sent message to local store for real-time display
     const unsubAck = onWs('ack', (data) => {
       const pending = (window as any).__pendingMsg
-      if (pending && data.msg_id) {
+      if (pending && data.msg_id && (!data.client_msg_id || pending.client_msg_id === data.client_msg_id)) {
         const chatId = pending.group_id || pending.to
         if (chatId) {
           // Build the message to add. For encrypted group messages, pendingMsg
@@ -254,9 +267,19 @@ export function useSocket() {
             id: data.msg_id,
             ts: data.ts || Date.now(),
           }
-          useStore.getState().addMessage(chatId, msgToStore)
+          useStore.getState().updateMessage(chatId, pending.id, { ...msgToStore, delivery_status: 'sent' })
         }
         ;(window as any).__pendingMsg = null
+      }
+      if (data.client_msg_id && data.msg_id) {
+        const state = useStore.getState()
+        for (const [chatId, messages] of Object.entries(state.messages)) {
+          const optimistic = messages.find(m => m.client_msg_id === data.client_msg_id)
+          if (optimistic) state.updateMessage(chatId, optimistic.id, {
+            id: data.msg_id, server_seq: data.server_seq, ts: data.ts || optimistic.ts,
+            delivery_status: 'sent',
+          })
+        }
       }
     })
 
@@ -350,6 +373,12 @@ export function useSocket() {
       unsubSKRotate()
       unsubSKInvalid()
       unsubLogoutSignals.forEach(unsubscribe => unsubscribe())
+      unsubAuthOk()
+      window.removeEventListener('online', recover)
+      window.removeEventListener('pageshow', recover)
+      window.removeEventListener('paperphone:network-changed', recover)
+      document.removeEventListener('visibilitychange', onVisible)
+      removeNativeListener?.()
       disconnectWs()
     }
   }, [token])

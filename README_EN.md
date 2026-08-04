@@ -8,12 +8,12 @@
 
 ---
 
-## What's New in 2.2.9
+## What's New in 2.3.1
 
-- Added persistent sticker caching for pack lists, pack metadata, and sticker media, keeping previously loaded content available on weak or offline connections.
-- Sticker media now uses stable `file_id` requests and a dedicated cache to reduce repeat downloads across static, animated, and video stickers.
-- Stickers are cached before sending, and stickers in chat messages now load from the local cache first.
-- The local cache cleanup action now removes the sticker cache as well.
+- Added durable device sessions and automatic access-token refresh for seamless renewal when short-lived tokens expire.
+- Improved WebSocket reliability with authentication timeouts, heartbeat checks, exponential-backoff reconnects, and recovery after network, proxy, or app-state changes.
+- Added message catch-up, a persistent outbound queue, and client message IDs for deduplication and automatic resend after reconnecting.
+- Added a legacy-session upgrade path; offline periods and network changes preserve the local account unless the server explicitly revokes the session.
 
 ---
 
