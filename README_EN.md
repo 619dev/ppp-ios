@@ -8,12 +8,10 @@
 
 ---
 
-## What's New in 2.3.1
+## What's New in 2.3.2
 
-- Added durable device sessions and automatic access-token refresh for seamless renewal when short-lived tokens expire.
-- Improved WebSocket reliability with authentication timeouts, heartbeat checks, exponential-backoff reconnects, and recovery after network, proxy, or app-state changes.
-- Added message catch-up, a persistent outbound queue, and client message IDs for deduplication and automatic resend after reconnecting.
-- Added a legacy-session upgrade path; offline periods and network changes preserve the local account unless the server explicitly revokes the session.
+- Keeps the screen awake during video and voice calls to prevent automatic locking and device sleep.
+- Covers private and group call states from dialing or ringing through connection, then restores the system sleep setting when the call ends.
 
 ---
 

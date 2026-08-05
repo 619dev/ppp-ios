@@ -8,6 +8,7 @@ import { post } from '../api/http'
 import { onWs, sendWs } from '../api/socket'
 import { playCallRingtone, showBrowserNotification, stopRingtone } from '../utils/notification'
 import { useI18n } from './useI18n'
+import { useKeepAwake } from './useKeepAwake'
 
 export type GroupCallStatus = 'idle' | 'ringing' | 'connecting' | 'connected'
 export type MeetingMode = 'discussion' | 'lecture'
@@ -48,6 +49,8 @@ export function useGroupCall(userId: string | undefined) {
   const [error, setError] = useState('')
   const [localStream, setLocalStream] = useState<MediaStream | null>(null)
   const [maxParticipants, setMaxParticipants] = useState(100)
+
+  useKeepAwake(status !== 'idle')
 
   const roomRef = useRef<Room | null>(null)
   const callIdRef = useRef<string | null>(null)

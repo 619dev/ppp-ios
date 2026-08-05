@@ -11,6 +11,7 @@ import {
 import { post } from '../api/http'
 import { sendWs, onWs } from '../api/socket'
 import { playCallRingtone, stopRingtone, showBrowserNotification } from '../utils/notification'
+import { useKeepAwake } from './useKeepAwake'
 
 export type CallState = 'idle' | 'outgoing' | 'incoming' | 'connecting' | 'connected' | 'error'
 export type VoiceMode = 'normal' | 'slow' | 'fast'
@@ -33,6 +34,8 @@ export function useCall(userId: string | undefined) {
   const [isCameraOff, setIsCameraOff] = useState(false)
   const [callError, setCallError] = useState('')
   const [voiceMode, setVoiceMode] = useState<VoiceMode>('normal')
+
+  useKeepAwake(callState !== 'idle')
 
   const roomRef = useRef<Room | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
