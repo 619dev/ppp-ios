@@ -8,10 +8,11 @@
 
 ---
 
-## What's New in 2.3.2
+## What's New in 2.3.3
 
-- Keeps the screen awake during video and voice calls to prevent automatic locking and device sleep.
-- Covers private and group call states from dialing or ringing through connection, then restores the system sleep setting when the call ends.
+- Keeps the screen awake while recording voice messages, preventing the recording UI from becoming unresponsive after automatic locking.
+- Limits voice messages to 120 seconds and stops automatically at the limit; processed voice effects are also capped at 120 seconds.
+- Releases the recorder, timers, and microphone when leaving a chat to improve recording stability.
 
 ---
 
