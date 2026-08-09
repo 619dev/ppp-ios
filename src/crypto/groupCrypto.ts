@@ -11,10 +11,12 @@
  */
 
 import { initSodium, encryptHybrid, decryptHybrid } from './ratchet'
+import { deleteSecureSecret, getSecureSecret, hasNativeSecureStorage, setSecureSecret } from '../api/secure-storage'
 
 // ── Sender Key Store ────────────────────────────────────────────────────────
 
 const SK_STORAGE_KEY = '__pp_sender_keys'
+const SK_SECRET_NAME = 'sender-keys-v1'
 
 interface SenderKeyEntry {
   groupId: string
@@ -24,22 +26,50 @@ interface SenderKeyEntry {
   distributed?: boolean // Whether this key has been successfully distributed (only for own keys)
 }
 
-/** In-memory + localStorage cache of sender keys */
+/** Sender keys are synchronous in memory and persisted asynchronously in Keychain. */
 let senderKeyCache: SenderKeyEntry[] = []
+let senderKeysAccount: string | null = null
+
+function currentAccount(): string | null {
+  try { return JSON.parse(localStorage.getItem('user') || 'null')?.id || null } catch { return null }
+}
+
+export async function hydrateSenderKeys(accountId?: string): Promise<void> {
+  const account = accountId || currentAccount()
+  if (account && senderKeysAccount === account) return
+  senderKeyCache = []
+  try {
+    if (account && hasNativeSecureStorage()) {
+      const secure = await getSecureSecret(account, SK_SECRET_NAME)
+      if (secure) senderKeyCache = JSON.parse(secure)
+      else {
+        const legacy = localStorage.getItem(SK_STORAGE_KEY)
+        if (legacy) {
+          senderKeyCache = JSON.parse(legacy)
+          await setSecureSecret(account, SK_SECRET_NAME, JSON.stringify(senderKeyCache))
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[GroupCrypto] Sender key hydration failed:', err)
+    senderKeyCache = []
+  } finally {
+    localStorage.removeItem(SK_STORAGE_KEY)
+    senderKeysAccount = account
+  }
+}
 
 function loadSenderKeys(): SenderKeyEntry[] {
-  if (senderKeyCache.length > 0) return senderKeyCache
-  try {
-    const raw = localStorage.getItem(SK_STORAGE_KEY)
-    if (raw) senderKeyCache = JSON.parse(raw)
-  } catch { senderKeyCache = [] }
   return senderKeyCache
 }
 
 function saveSenderKeys() {
-  try {
-    localStorage.setItem(SK_STORAGE_KEY, JSON.stringify(senderKeyCache))
-  } catch { /* localStorage full */ }
+  localStorage.removeItem(SK_STORAGE_KEY)
+  const account = currentAccount()
+  if (account && hasNativeSecureStorage()) {
+    void setSecureSecret(account, SK_SECRET_NAME, JSON.stringify(senderKeyCache))
+      .catch(err => console.warn('[GroupCrypto] Sender key persistence failed:', err))
+  }
 }
 
 /**
@@ -109,7 +139,9 @@ export function clearGroupSenderKeys(groupId: string) {
  */
 export function clearAllSenderKeys() {
   senderKeyCache = []
-  saveSenderKeys()
+  const account = currentAccount()
+  if (account) void deleteSecureSecret(account, SK_SECRET_NAME).catch(() => {})
+  localStorage.removeItem(SK_STORAGE_KEY)
 }
 
 /**

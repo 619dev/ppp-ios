@@ -8,11 +8,13 @@
 
 ---
 
-## What's New in 2.3.3
+## What's New in 2.3.5
 
-- Keeps the screen awake while recording voice messages, preventing the recording UI from becoming unresponsive after automatic locking.
-- Limits voice messages to 120 seconds and stops automatically at the limit; processed voice effects are also capped at 120 seconds.
-- Releases the recorder, timers, and microphone when leaving a chat to improve recording stability.
+- Added encryption at rest for local chat history using a device-bound key and AES-256-GCM, with ciphertext stored in a dedicated IndexedDB database.
+- Moved the device master key, identity private keys, and group Sender Keys into the iOS Keychain with non-migrating device-only protection.
+- Chat plaintext now remains in memory only; decrypted fields are stripped before persistence, including optimistic outgoing private messages.
+- Added one-time migration and removal of legacy plaintext keys and chat caches from localStorage, sessionStorage, and IndexedDB, plus cleanup of the former unencrypted media cache.
+- Encrypted caches are isolated per account and authenticated against tampering; invalid data is discarded without falling back to plaintext storage.
 
 ---
 
@@ -30,7 +32,7 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 |---------|-------------|
 | 🔐 End-to-End Encryption | Stateless ECDH + XSalsa20-Poly1305, per-message ephemeral keys, forward secrecy |
 | 🛡️ Post-Quantum Encryption | Integrated CRYSTALS-Kyber post-quantum key encapsulation |
-| 🗝️ Zero-Knowledge Server | Private keys stored only on device, 4-layer persistence (Memory → localStorage → sessionStorage → IndexedDB) |
+| 🗝️ Secure Local Keys | Identity and group Sender Keys are held in the iOS Keychain; chat caches use a device-bound AES-256-GCM key |
 | 📹 Video/Voice Calls | LiveKit SFU-based private and group voice/video calls |
 | 🧑‍🏫 Meeting Controls | Host mute-all, discussion/lecture modes, participant list, and speaking status |
 | 🎙️ Real-time Voice Changer | 3 modes (0.8x / 1.0x / 1.2x), powered by Web Audio API |

@@ -1,6 +1,138 @@
 import UIKit
 import Capacitor
 import UserNotifications
+import CryptoKit
+import Security
+
+@objc(SecureStorage)
+public class SecureStoragePlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "SecureStorage"
+    public let jsName = "SecureStorage"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "seal", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "open", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setSecret", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getSecret", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "deleteSecret", returnType: CAPPluginReturnPromise)
+    ]
+
+    private let service = "com.fm619tech.paperphoneplus.secure-storage.v1"
+
+    private func keyName(_ account: String) -> String { "master.\(account)" }
+
+    private func readKeychain(account: String) throws -> Data? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecItemNotFound { return nil }
+        guard status == errSecSuccess, let data = result as? Data else {
+            throw NSError(domain: NSOSStatusErrorDomain, code: Int(status))
+        }
+        return data
+    }
+
+    private func writeKeychain(account: String, data: Data) throws {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        let attrs: [String: Any] = [kSecValueData as String: data]
+        let updateStatus = SecItemUpdate(query as CFDictionary, attrs as CFDictionary)
+        if updateStatus == errSecSuccess { return }
+        guard updateStatus == errSecItemNotFound else {
+            throw NSError(domain: NSOSStatusErrorDomain, code: Int(updateStatus))
+        }
+        var add = query
+        add[kSecValueData as String] = data
+        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        let addStatus = SecItemAdd(add as CFDictionary, nil)
+        guard addStatus == errSecSuccess else {
+            throw NSError(domain: NSOSStatusErrorDomain, code: Int(addStatus))
+        }
+    }
+
+    private func deleteKeychain(account: String) throws {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw NSError(domain: NSOSStatusErrorDomain, code: Int(status))
+        }
+    }
+
+    private func masterKey(account: String) throws -> SymmetricKey {
+        let name = keyName(account)
+        if let data = try readKeychain(account: name) { return SymmetricKey(data: data) }
+        var bytes = Data(count: 32)
+        let status = bytes.withUnsafeMutableBytes { ptr in
+            SecRandomCopyBytes(kSecRandomDefault, 32, ptr.baseAddress!)
+        }
+        guard status == errSecSuccess else { throw NSError(domain: NSOSStatusErrorDomain, code: Int(status)) }
+        try writeKeychain(account: name, data: bytes)
+        return SymmetricKey(data: bytes)
+    }
+
+    private func required(_ call: CAPPluginCall, _ name: String) -> String? {
+        guard let value = call.getString(name), !value.isEmpty else {
+            call.reject("Missing \(name)")
+            return nil
+        }
+        return value
+    }
+
+    @objc func seal(_ call: CAPPluginCall) {
+        guard let account = required(call, "account"), let purpose = required(call, "purpose"),
+              let plaintext = call.getString("plaintext") else { return }
+        do {
+            let sealed = try AES.GCM.seal(Data(plaintext.utf8), using: masterKey(account: account), authenticating: Data("ppp:v1:\(account):\(purpose)".utf8))
+            guard let combined = sealed.combined else { throw NSError(domain: "SecureStorage", code: 1) }
+            call.resolve(["ciphertext": combined.base64EncodedString()])
+        } catch { call.reject("Encryption failed", nil, error) }
+    }
+
+    @objc func open(_ call: CAPPluginCall) {
+        guard let account = required(call, "account"), let purpose = required(call, "purpose"),
+              let encoded = required(call, "ciphertext") else { return }
+        guard let combined = Data(base64Encoded: encoded) else { call.reject("Invalid ciphertext"); return }
+        do {
+            let box = try AES.GCM.SealedBox(combined: combined)
+            let plaintext = try AES.GCM.open(box, using: masterKey(account: account), authenticating: Data("ppp:v1:\(account):\(purpose)".utf8))
+            guard let value = String(data: plaintext, encoding: .utf8) else { throw NSError(domain: "SecureStorage", code: 2) }
+            call.resolve(["plaintext": value])
+        } catch { call.reject("Decryption failed", nil, error) }
+    }
+
+    @objc func setSecret(_ call: CAPPluginCall) {
+        guard let account = required(call, "account"), let name = required(call, "name"),
+              let value = call.getString("value") else { return }
+        do { try writeKeychain(account: "secret.\(account).\(name)", data: Data(value.utf8)); call.resolve() }
+        catch { call.reject("Keychain write failed", nil, error) }
+    }
+
+    @objc func getSecret(_ call: CAPPluginCall) {
+        guard let account = required(call, "account"), let name = required(call, "name") else { return }
+        do {
+            let data = try readKeychain(account: "secret.\(account).\(name)")
+            call.resolve(["value": data.flatMap { String(data: $0, encoding: .utf8) } ?? NSNull()])
+        } catch { call.reject("Keychain read failed", nil, error) }
+    }
+
+    @objc func deleteSecret(_ call: CAPPluginCall) {
+        guard let account = required(call, "account"), let name = required(call, "name") else { return }
+        do { try deleteKeychain(account: "secret.\(account).\(name)"); call.resolve() }
+        catch { call.reject("Keychain delete failed", nil, error) }
+    }
+}
 
 @objc(KeepAwake)
 public class KeepAwakePlugin: CAPPlugin, CAPBridgedPlugin {

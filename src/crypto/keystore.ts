@@ -1,19 +1,11 @@
-/**
- * 4-tier key persistence:
- *   1. In-memory (fastest, lost on tab close)
- *   2. localStorage (survives page refresh)
- *   3. sessionStorage (survives navigation, lost on tab close)
- *   4. IndexedDB (most persistent, survives browser restart)
- *
- * Keys are always read from memory first. On startup, keys are loaded
- * from persisted storage in priority order: IndexedDB → localStorage → sessionStorage.
- */
+import { deleteSecureSecret, getSecureSecret, hasNativeSecureStorage, setSecureSecret } from '../api/secure-storage'
 
-const DB_NAME = 'PaperPhoneKeys'
-const STORE_NAME = 'keys'
-const MEM_KEY = '__pp_keys'
+const LEGACY_DB_NAME = 'PaperPhoneKeys'
+const LEGACY_STORE_NAME = 'keys'
+const LEGACY_MEM_KEY = '__pp_keys'
+const SECRET_NAME = 'identity-keys-v1'
 
-interface KeyBundle {
+export interface KeyBundle {
   ik_pub: string
   ik_priv: string
   spk_pub: string
@@ -24,126 +16,110 @@ interface KeyBundle {
   opks: Array<{ key_id: number; pub: string; priv: string }>
 }
 
-// In-memory store
 let memKeys: KeyBundle | null = null
+let memAccount: string | null = null
+
+function currentAccount(explicit?: string): string | null {
+  if (explicit) return explicit
+  try { return JSON.parse(localStorage.getItem('user') || 'null')?.id || null } catch { return null }
+}
 
 export function getKeys(): KeyBundle | null {
-  if (memKeys) return memKeys
-
-  // Try localStorage
-  const ls = localStorage.getItem(MEM_KEY)
-  if (ls) {
-    try {
-      memKeys = JSON.parse(ls)
-      return memKeys
-    } catch {}
-  }
-
-  // Try sessionStorage
-  const ss = sessionStorage.getItem(MEM_KEY)
-  if (ss) {
-    try {
-      memKeys = JSON.parse(ss)
-      return memKeys
-    } catch {}
-  }
-
-  return null
+  const account = currentAccount()
+  return account && memAccount === account ? memKeys : null
 }
 
-export function setKeys(keys: KeyBundle) {
+export async function setKeys(keys: KeyBundle, accountId?: string): Promise<void> {
   memKeys = keys
-  // Persist to all tiers
-  const json = JSON.stringify(keys)
-  try { localStorage.setItem(MEM_KEY, json) } catch {}
-  try { sessionStorage.setItem(MEM_KEY, json) } catch {}
-  saveToIndexedDB(keys).catch(() => {})
+  const account = currentAccount(accountId)
+  memAccount = account
+  if (account && hasNativeSecureStorage()) {
+    await setSecureSecret(account, SECRET_NAME, JSON.stringify(keys))
+  }
+  removeLegacyBrowserCopies()
+  await clearLegacyIndexedDB()
 }
 
-export function clearKeys() {
+export function clearKeys(accountId?: string): void {
   memKeys = null
-  try { localStorage.removeItem(MEM_KEY) } catch {}
-  try { sessionStorage.removeItem(MEM_KEY) } catch {}
-  clearIndexedDB().catch(() => {})
+  memAccount = null
+  const account = currentAccount(accountId)
+  if (account) void deleteSecureSecret(account, SECRET_NAME).catch(() => {})
+  removeLegacyBrowserCopies()
 }
 
-export async function loadFromIndexedDB(): Promise<KeyBundle | null> {
-  return new Promise((resolve) => {
+/**
+ * Loads identity keys from the iOS Keychain. The legacy function name is kept
+ * temporarily to avoid a risky broad call-site migration.
+ */
+export async function loadFromIndexedDB(accountId?: string): Promise<KeyBundle | null> {
+  const account = currentAccount(accountId)
+  if (memKeys && memAccount === account) return memKeys
+  memKeys = null
+  memAccount = account
+
+  if (account && hasNativeSecureStorage()) {
+    const secure = await getSecureSecret(account, SECRET_NAME)
+    if (secure) {
+      memKeys = JSON.parse(secure)
+      removeLegacyBrowserCopies()
+      await clearLegacyIndexedDB()
+      return memKeys
+    }
+  }
+
+  // One-time upgrade: import the previous plaintext copies, secure them in
+  // Keychain, and then erase all browser-storage copies.
+  const legacy = await readLegacyKeys()
+  if (legacy) {
+    memKeys = legacy
+    if (account && hasNativeSecureStorage()) {
+      await setSecureSecret(account, SECRET_NAME, JSON.stringify(legacy))
+    }
+  }
+  removeLegacyBrowserCopies()
+  await clearLegacyIndexedDB()
+  return memKeys
+}
+
+/** Removes usable private keys from JavaScript memory without deleting Keychain data. */
+export function lockKeysInMemory(): void {
+  memKeys = null
+  memAccount = null
+}
+
+function removeLegacyBrowserCopies(): void {
+  try { localStorage.removeItem(LEGACY_MEM_KEY) } catch {}
+  try { sessionStorage.removeItem(LEGACY_MEM_KEY) } catch {}
+}
+
+async function readLegacyKeys(): Promise<KeyBundle | null> {
+  for (const storage of [localStorage, sessionStorage]) {
     try {
-      const req = indexedDB.open(DB_NAME, 1)
-      req.onupgradeneeded = () => {
-        const db = req.result
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME)
-        }
-      }
+      const raw = storage.getItem(LEGACY_MEM_KEY)
+      if (raw) return JSON.parse(raw)
+    } catch {}
+  }
+  return new Promise(resolve => {
+    try {
+      const req = indexedDB.open(LEGACY_DB_NAME, 1)
       req.onsuccess = () => {
         const db = req.result
-        const tx = db.transaction(STORE_NAME, 'readonly')
-        const store = tx.objectStore(STORE_NAME)
-        const get = store.get('bundle')
-        get.onsuccess = () => {
-          if (get.result) {
-            memKeys = get.result
-            // Also persist to other tiers
-            const json = JSON.stringify(get.result)
-            try { localStorage.setItem(MEM_KEY, json) } catch {}
-            try { sessionStorage.setItem(MEM_KEY, json) } catch {}
-          }
-          resolve(get.result || null)
-        }
-        get.onerror = () => resolve(null)
+        if (!db.objectStoreNames.contains(LEGACY_STORE_NAME)) { db.close(); resolve(null); return }
+        const get = db.transaction(LEGACY_STORE_NAME, 'readonly').objectStore(LEGACY_STORE_NAME).get('bundle')
+        get.onsuccess = () => { db.close(); resolve(get.result || null) }
+        get.onerror = () => { db.close(); resolve(null) }
       }
       req.onerror = () => resolve(null)
-    } catch {
-      resolve(null)
-    }
+    } catch { resolve(null) }
   })
 }
 
-async function saveToIndexedDB(keys: KeyBundle): Promise<void> {
-  return new Promise((resolve, reject) => {
+async function clearLegacyIndexedDB(): Promise<void> {
+  return new Promise(resolve => {
     try {
-      const req = indexedDB.open(DB_NAME, 1)
-      req.onupgradeneeded = () => {
-        const db = req.result
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME)
-        }
-      }
-      req.onsuccess = () => {
-        const db = req.result
-        const tx = db.transaction(STORE_NAME, 'readwrite')
-        const store = tx.objectStore(STORE_NAME)
-        store.put(keys, 'bundle')
-        tx.oncomplete = () => resolve()
-        tx.onerror = () => reject(tx.error)
-      }
-      req.onerror = () => reject(req.error)
-    } catch (e) {
-      reject(e)
-    }
-  })
-}
-
-async function clearIndexedDB(): Promise<void> {
-  return new Promise((resolve) => {
-    try {
-      const req = indexedDB.open(DB_NAME, 1)
-      req.onsuccess = () => {
-        const db = req.result
-        if (db.objectStoreNames.contains(STORE_NAME)) {
-          const tx = db.transaction(STORE_NAME, 'readwrite')
-          tx.objectStore(STORE_NAME).clear()
-          tx.oncomplete = () => resolve()
-          tx.onerror = () => resolve()
-        } else {
-          resolve()
-        }
-      }
-      req.onerror = () => resolve()
-    } catch {
-      resolve()
-    }
+      const req = indexedDB.deleteDatabase(LEGACY_DB_NAME)
+      req.onsuccess = req.onerror = req.onblocked = () => resolve()
+    } catch { resolve() }
   })
 }

@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
-import { useStore } from './store'
+import { useEffect, useState } from 'react'
+import { hydrateEncryptedMessageCache, useStore } from './store'
 import { useSocket } from './hooks/useSocket'
 import { loadFromIndexedDB } from './crypto/keystore'
+import { hydrateSenderKeys } from './crypto/groupCrypto'
 import { applyNativeProxy } from './api/proxy-bridge'
 import Login from './pages/Login'
 import Chats from './pages/Chats'
@@ -156,16 +157,34 @@ function ProtectedLayout() {
 
 export default function App() {
   const token = useStore(s => s.token)
+  const user = useStore(s => s.user)
   const theme = useStore(s => s.theme)
+  const [hydratedAccount, setHydratedAccount] = useState<string | null>(null)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
-  // Hydrate crypto keys from IndexedDB (tier 4 of 4-tier key persistence)
+  // Do not mount chats/socket code until all sensitive state has been restored
+  // from Keychain and the authenticated local cache has been opened.
   useEffect(() => {
-    loadFromIndexedDB().catch(() => {})
-  }, [])
+    let cancelled = false
+    if (!token || !user?.id) {
+      setHydratedAccount(null)
+      return
+    }
+    Promise.all([
+      loadFromIndexedDB(user.id),
+      hydrateSenderKeys(user.id),
+      hydrateEncryptedMessageCache(user.id),
+    ]).then(() => {
+      if (!cancelled) setHydratedAccount(user.id)
+    }).catch(err => {
+      console.error('[App] Secure state hydration failed:', err)
+      if (!cancelled) setHydratedAccount(user.id)
+    })
+    return () => { cancelled = true }
+  }, [token, user?.id])
 
   // Apply persisted proxy settings on app startup (native iOS)
   useEffect(() => {
@@ -212,7 +231,7 @@ export default function App() {
         <Route path="/login" element={token ? <Navigate to="/chats" replace /> : <Login />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
-        <Route path="/*" element={token ? <ProtectedLayout /> : <Navigate to="/login" replace />} />
+        <Route path="/*" element={token ? (hydratedAccount === user?.id ? <ProtectedLayout /> : null) : <Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   )

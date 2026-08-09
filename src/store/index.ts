@@ -1,54 +1,88 @@
 import { create } from 'zustand'
 import { applyNativeProxy, clearNativeProxy } from '../api/proxy-bridge'
-import { cacheMediaIn, readOfflineData, writeOfflineData } from '../utils/offlineCache'
+import { MEDIA_CACHE_NAME, readOfflineData, writeOfflineData } from '../utils/offlineCache'
+import { hasNativeSecureStorage, openForAccount, sealForAccount } from '../api/secure-storage'
+import { deleteSecureCache, readSecureCache, writeSecureCache } from '../utils/secureCacheDb'
 
 // ── Message cache persistence helpers ──────────────────────────
-const MSG_CACHE_KEY = 'pp_msg_cache'
-const MSG_CACHE_VERSION = 1
+const LEGACY_MSG_CACHE_KEY = 'pp_msg_cache'
+const MSG_CACHE_VERSION = 2
+const messageCacheKey = (account: string) => `pp_msg_cache:v2:${account}`
 
-function loadCachedMessages(): Record<string, ChatMessage[]> {
-  try {
-    const raw = localStorage.getItem(MSG_CACHE_KEY)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw)
-    if (parsed._v !== MSG_CACHE_VERSION) return {}
-    const { _v, ...msgs } = parsed
-    return msgs
-  } catch { return {} }
+function storageSafeMessages(messages: Record<string, ChatMessage[]>): Record<string, ChatMessage[]> {
+  const result: Record<string, ChatMessage[]> = {}
+  for (const [chatId, msgs] of Object.entries(messages)) {
+    // Defense in depth: display plaintext is memory-only even though the entire
+    // resulting blob is also authenticated and encrypted by the native layer.
+    result[chatId] = msgs.slice(-2000).map(({ decrypted: _plaintext, ...stored }) => stored)
+  }
+  return result
 }
 
 let _saveMsgTimer: ReturnType<typeof setTimeout> | null = null
 function persistMessages(messages: Record<string, ChatMessage[]>) {
   if (_saveMsgTimer) clearTimeout(_saveMsgTimer)
   _saveMsgTimer = setTimeout(() => {
-    try {
-      // Keep a deep offline history for every conversation.
-      const trimmed: Record<string, ChatMessage[]> = { _v: MSG_CACHE_VERSION } as any
-      for (const [chatId, msgs] of Object.entries(messages)) {
-        trimmed[chatId] = msgs.slice(-2000)
-      }
-      localStorage.setItem(MSG_CACHE_KEY, JSON.stringify(trimmed))
-      void cacheMediaIn(trimmed)
-    } catch {
-      // localStorage full — try to evict oldest chats
-      try {
-        const keys = Object.keys(messages)
-        if (keys.length > 3) {
-          const reduced: Record<string, ChatMessage[]> = { _v: MSG_CACHE_VERSION } as any
-          // Keep only 3 most recent chats
-          const sorted = keys.sort((a, b) => {
-            const lastA = messages[a]?.at(-1)?.ts || 0
-            const lastB = messages[b]?.at(-1)?.ts || 0
-            return lastB - lastA
-          })
-          for (const k of sorted.slice(0, 3)) {
-            reduced[k] = messages[k].slice(-100)
-          }
-          localStorage.setItem(MSG_CACHE_KEY, JSON.stringify(reduced))
-        }
-      } catch { /* give up */ }
-    }
+    const account = (() => { try { return JSON.parse(localStorage.getItem('user') || 'null')?.id as string | undefined } catch { return undefined } })()
+    if (!account || !hasNativeSecureStorage()) return
+    const safe = storageSafeMessages(messages)
+    void sealForAccount(account, 'message-cache', JSON.stringify({ _v: MSG_CACHE_VERSION, messages: safe }))
+      .then(ciphertext => writeSecureCache(messageCacheKey(account), ciphertext))
+      .catch(err => console.warn('[Store] Encrypted message cache write failed:', err))
   }, 500) // debounce 500ms
+}
+
+export async function hydrateEncryptedMessageCache(account: string): Promise<void> {
+  if (!account || !hasNativeSecureStorage()) {
+    localStorage.removeItem(LEGACY_MSG_CACHE_KEY)
+    return
+  }
+  try {
+    let messages: Record<string, ChatMessage[]> = {}
+    let encrypted = await readSecureCache(messageCacheKey(account))
+    // Import an intermediate v2 localStorage envelope if one was ever written.
+    const localEnvelope = localStorage.getItem(messageCacheKey(account))
+    if (!encrypted && localEnvelope) {
+      encrypted = JSON.parse(localEnvelope).ciphertext
+      await writeSecureCache(messageCacheKey(account), encrypted!)
+    }
+    localStorage.removeItem(messageCacheKey(account))
+    if (encrypted) {
+      const plaintext = await openForAccount(account, 'message-cache', encrypted)
+      const parsed = JSON.parse(plaintext)
+      if (parsed._v === MSG_CACHE_VERSION) messages = parsed.messages || {}
+    } else {
+      // One-time migration from the old plaintext cache. Plaintext display fields
+      // are deliberately discarded before the encrypted replacement is written.
+      const legacyRaw = localStorage.getItem(LEGACY_MSG_CACHE_KEY)
+      if (legacyRaw) {
+        const legacy = JSON.parse(legacyRaw)
+        const { _v: _legacyVersion, ...legacyMessages } = legacy
+        messages = storageSafeMessages(legacyMessages)
+        const ciphertext = await sealForAccount(account, 'message-cache', JSON.stringify({ _v: MSG_CACHE_VERSION, messages }))
+        await writeSecureCache(messageCacheKey(account), ciphertext)
+      }
+    }
+    localStorage.removeItem(LEGACY_MSG_CACHE_KEY)
+    // Previous versions cached attachment bodies as unencrypted Web Cache data.
+    if ('caches' in window) await caches.delete(MEDIA_CACHE_NAME)
+    useStore.setState({ messages })
+  } catch (err) {
+    // Corrupt/tampered cache must never fall back to plaintext.
+    console.warn('[Store] Encrypted message cache hydration failed; cache discarded:', err)
+    await deleteSecureCache(messageCacheKey(account))
+    localStorage.removeItem(messageCacheKey(account))
+    localStorage.removeItem(LEGACY_MSG_CACHE_KEY)
+    useStore.setState({ messages: {} })
+  }
+}
+
+export function clearEncryptedMessageCache(account?: string): void {
+  if (account) {
+    localStorage.removeItem(messageCacheKey(account))
+    void deleteSecureCache(messageCacheKey(account))
+  }
+  localStorage.removeItem(LEGACY_MSG_CACHE_KEY)
 }
 
 export interface User {
@@ -288,7 +322,7 @@ export const useStore = create<AppStore>((set, get) => ({
     localStorage.removeItem('token')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
-    localStorage.removeItem(MSG_CACHE_KEY)
+    clearEncryptedMessageCache(currentUserId)
     set({ token: null, user: null, friends: [], groups: [], messages: {}, unread: {} })
   },
 
@@ -328,7 +362,7 @@ export const useStore = create<AppStore>((set, get) => ({
   },
 
   // Messages (initialized from localStorage cache)
-  messages: loadCachedMessages(),
+  messages: {},
   addMessage: (chatId, msg) => {
     let inserted = false
     set(s => {
@@ -431,6 +465,7 @@ export const useStore = create<AppStore>((set, get) => ({
       clearTimeout(_saveMsgTimer)
       _saveMsgTimer = null
     }
+    clearEncryptedMessageCache(get().user?.id)
     set({ friends: [], groups: [], messages: {}, unread: {} })
   },
 }))
