@@ -4,6 +4,14 @@ import UserNotifications
 import CryptoKit
 import Security
 
+@objc(PaperPhoneBridgeViewController)
+public class PaperPhoneBridgeViewController: CAPBridgeViewController {
+    public override func capacitorDidLoad() {
+        bridge?.registerPluginInstance(SecureStoragePlugin())
+        bridge?.registerPluginInstance(KeepAwakePlugin())
+    }
+}
+
 @objc(SecureStorage)
 public class SecureStoragePlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "SecureStorage"

@@ -8,13 +8,10 @@
 
 ---
 
-## What's New in 2.3.5
+## What's New in 2.3.6
 
-- Added encryption at rest for local chat history using a device-bound key and AES-256-GCM, with ciphertext stored in a dedicated IndexedDB database.
-- Moved the device master key, identity private keys, and group Sender Keys into the iOS Keychain with non-migrating device-only protection.
-- Chat plaintext now remains in memory only; decrypted fields are stripped before persistence, including optimistic outgoing private messages.
-- Added one-time migration and removal of legacy plaintext keys and chat caches from localStorage, sessionStorage, and IndexedDB, plus cleanup of the former unencrypted media cache.
-- Encrypted caches are isolated per account and authenticated against tampering; invalid data is discarded without falling back to plaintext storage.
+- Fixed missing secure-storage plugin registration in 2.3.5, which prevented identity keys from loading and made messages undecryptable after upgrading.
+- The chat interface now remains locked if secure identity-key restoration fails.
 
 ---
 

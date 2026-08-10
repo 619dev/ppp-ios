@@ -160,6 +160,7 @@ export default function App() {
   const user = useStore(s => s.user)
   const theme = useStore(s => s.theme)
   const [hydratedAccount, setHydratedAccount] = useState<string | null>(null)
+  const [secureHydrationError, setSecureHydrationError] = useState(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -171,17 +172,23 @@ export default function App() {
     let cancelled = false
     if (!token || !user?.id) {
       setHydratedAccount(null)
+      setSecureHydrationError(false)
       return
     }
+    setSecureHydrationError(false)
     Promise.all([
       loadFromIndexedDB(user.id),
       hydrateSenderKeys(user.id),
       hydrateEncryptedMessageCache(user.id),
-    ]).then(() => {
+    ]).then(([keys]) => {
+      if (!keys) throw new Error('Identity keys are unavailable')
       if (!cancelled) setHydratedAccount(user.id)
     }).catch(err => {
       console.error('[App] Secure state hydration failed:', err)
-      if (!cancelled) setHydratedAccount(user.id)
+      if (!cancelled) {
+        setHydratedAccount(null)
+        setSecureHydrationError(true)
+      }
     })
     return () => { cancelled = true }
   }, [token, user?.id])
@@ -231,7 +238,13 @@ export default function App() {
         <Route path="/login" element={token ? <Navigate to="/chats" replace /> : <Login />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
-        <Route path="/*" element={token ? (hydratedAccount === user?.id ? <ProtectedLayout /> : null) : <Navigate to="/login" replace />} />
+        <Route path="/*" element={token ? (
+          hydratedAccount === user?.id
+            ? <ProtectedLayout />
+            : secureHydrationError
+              ? <div className="empty-state"><div>安全密钥加载失败，请关闭并重新打开应用。</div></div>
+              : null
+        ) : <Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   )
