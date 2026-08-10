@@ -8,10 +8,11 @@
 
 ---
 
-## What's New in 2.3.6
+## What's New in 2.3.7
 
-- Fixed missing secure-storage plugin registration in 2.3.5, which prevented identity keys from loading and made messages undecryptable after upgrading.
-- The chat interface now remains locked if secure identity-key restoration fails.
+- Fixed an app startup failure on fresh installs or upgrades that retained a session without a local identity key.
+- Identity keys are now securely restored or initialized during startup, and invalid Keychain data left by interrupted migrations is removed.
+- Temporary server unavailability no longer blocks local secure-state initialization; key synchronization can continue after connectivity is restored.
 
 ---
 

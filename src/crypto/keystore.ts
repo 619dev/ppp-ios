@@ -19,6 +19,19 @@ export interface KeyBundle {
 let memKeys: KeyBundle | null = null
 let memAccount: string | null = null
 
+function parseKeyBundle(raw: string): KeyBundle | null {
+  try {
+    const keys = JSON.parse(raw) as Partial<KeyBundle>
+    if (!keys || typeof keys.ik_pub !== 'string' || typeof keys.ik_priv !== 'string' ||
+        typeof keys.spk_pub !== 'string' || typeof keys.spk_priv !== 'string' ||
+        typeof keys.sign_pub !== 'string' || typeof keys.sign_priv !== 'string' ||
+        !Array.isArray(keys.opks)) return null
+    return keys as KeyBundle
+  } catch {
+    return null
+  }
+}
+
 function currentAccount(explicit?: string): string | null {
   if (explicit) return explicit
   try { return JSON.parse(localStorage.getItem('user') || 'null')?.id || null } catch { return null }
@@ -61,10 +74,15 @@ export async function loadFromIndexedDB(accountId?: string): Promise<KeyBundle |
   if (account && hasNativeSecureStorage()) {
     const secure = await getSecureSecret(account, SECRET_NAME)
     if (secure) {
-      memKeys = JSON.parse(secure)
-      removeLegacyBrowserCopies()
-      await clearLegacyIndexedDB()
-      return memKeys
+      memKeys = parseKeyBundle(secure)
+      if (memKeys) {
+        removeLegacyBrowserCopies()
+        await clearLegacyIndexedDB()
+        return memKeys
+      }
+      // Do not let a partial/invalid value left by an interrupted migration
+      // permanently lock the account out on every subsequent launch.
+      await deleteSecureSecret(account, SECRET_NAME)
     }
   }
 

@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { useEffect, useState } from 'react'
 import { hydrateEncryptedMessageCache, useStore } from './store'
 import { useSocket } from './hooks/useSocket'
-import { loadFromIndexedDB } from './crypto/keystore'
+import { ensureIdentityKeys } from './crypto/identity'
 import { hydrateSenderKeys } from './crypto/groupCrypto'
 import { applyNativeProxy } from './api/proxy-bridge'
 import Login from './pages/Login'
@@ -160,7 +160,7 @@ export default function App() {
   const user = useStore(s => s.user)
   const theme = useStore(s => s.theme)
   const [hydratedAccount, setHydratedAccount] = useState<string | null>(null)
-  const [secureHydrationError, setSecureHydrationError] = useState(false)
+  const [secureHydrationError, setSecureHydrationError] = useState<string | null>(null)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -172,12 +172,12 @@ export default function App() {
     let cancelled = false
     if (!token || !user?.id) {
       setHydratedAccount(null)
-      setSecureHydrationError(false)
+      setSecureHydrationError(null)
       return
     }
-    setSecureHydrationError(false)
+    setSecureHydrationError(null)
     Promise.all([
-      loadFromIndexedDB(user.id),
+      ensureIdentityKeys(user.id),
       hydrateSenderKeys(user.id),
       hydrateEncryptedMessageCache(user.id),
     ]).then(([keys]) => {
@@ -187,7 +187,7 @@ export default function App() {
       console.error('[App] Secure state hydration failed:', err)
       if (!cancelled) {
         setHydratedAccount(null)
-        setSecureHydrationError(true)
+        setSecureHydrationError(err instanceof Error ? err.message : String(err))
       }
     })
     return () => { cancelled = true }
