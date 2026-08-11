@@ -14,7 +14,7 @@ const config: CapacitorConfig = {
       launchShowDuration: 2000,
       splashFullScreen: true,
       splashImmersive: true,
-      backgroundColor: '#1a1a2e',
+      backgroundColor: '#ffffff',
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],

@@ -23,8 +23,23 @@ async function generateIdentityKeys(): Promise<KeyBundle> {
   }
 }
 
+const pendingIdentityLoads = new Map<string, Promise<KeyBundle>>()
+
 /** Restores identity keys, or provisions a replacement identity on a new install. */
 export async function ensureIdentityKeys(accountId: string): Promise<KeyBundle> {
+  const pending = pendingIdentityLoads.get(accountId)
+  if (pending) return pending
+
+  const load = ensureIdentityKeysOnce(accountId)
+  pendingIdentityLoads.set(accountId, load)
+  try {
+    return await load
+  } finally {
+    if (pendingIdentityLoads.get(accountId) === load) pendingIdentityLoads.delete(accountId)
+  }
+}
+
+async function ensureIdentityKeysOnce(accountId: string): Promise<KeyBundle> {
   const existing = getKeys() || await loadFromIndexedDB(accountId)
   if (existing) return existing
 

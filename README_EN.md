@@ -8,6 +8,12 @@
 
 ---
 
+## What's New in 2.3.8
+
+- Fixed the camera potentially remaining active when the scanner is closed during the permission prompt.
+- Fixed the scanner back button's touch layering for reliable closing on iOS.
+- Existing friends are now identified and disabled in user search results to prevent duplicate requests.
+
 ## What's New in 2.3.7
 
 - Fixed an app startup failure on fresh installs or upgrades that retained a session without a local identity key.

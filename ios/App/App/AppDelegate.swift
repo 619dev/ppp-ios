@@ -61,6 +61,13 @@ public class SecureStoragePlugin: CAPPlugin, CAPBridgedPlugin {
         add[kSecValueData as String] = data
         add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         let addStatus = SecItemAdd(add as CFDictionary, nil)
+        if addStatus == errSecDuplicateItem {
+            let retryStatus = SecItemUpdate(query as CFDictionary, attrs as CFDictionary)
+            guard retryStatus == errSecSuccess else {
+                throw NSError(domain: NSOSStatusErrorDomain, code: Int(retryStatus))
+            }
+            return
+        }
         guard addStatus == errSecSuccess else {
             throw NSError(domain: NSOSStatusErrorDomain, code: Int(addStatus))
         }
