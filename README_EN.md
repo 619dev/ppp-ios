@@ -8,6 +8,14 @@
 
 ---
 
+## What's New in 2.4.0
+
+- Added an iOS Share Extension for sending files from Files, Photos, and other apps to PaperPhonePlus contacts.
+
+## What's New in 2.3.9
+
+- Fixed legacy one-way friendship records causing an “Already friends” message while the contact remained invisible and unavailable for chat; adding the user again now repairs both directions and refreshes the contact list immediately.
+
 ## What's New in 2.3.8
 
 - Fixed the camera potentially remaining active when the scanner is closed during the permission prompt.

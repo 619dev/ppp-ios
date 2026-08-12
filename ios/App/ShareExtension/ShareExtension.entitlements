@@ -6,7 +6,5 @@
 	<array>
 		<string>group.com.fm619tech.paperphoneplus</string>
 	</array>
-	<key>aps-environment</key>
-	<string>production</string>
 </dict>
 </plist>

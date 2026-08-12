@@ -17,6 +17,7 @@ import Moments from './pages/Moments'
 import Timeline from './pages/Timeline'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfUse from './pages/TermsOfUse'
+import ShareTarget from './pages/ShareTarget'
 import TabBar from './components/TabBar'
 import CallOverlay from './components/CallOverlay'
 import GroupCallOverlay from './components/GroupCallOverlay'
@@ -31,6 +32,7 @@ import { initNativePush } from './api/nativePush'
 import { initLocalNotifications } from './api/localNotification'
 import { setAppBadgeCount } from './api/appBadge'
 import { useAutoDeleteCleanup } from './hooks/useAutoDeleteCleanup'
+import { getPendingSharedFile } from './api/sharedFile'
 
 function ProtectedLayout() {
   useSocket()
@@ -144,6 +146,7 @@ function ProtectedLayout() {
           <Route path="/timeline" element={<Timeline />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfUse />} />
+          <Route path="/share" element={<ShareTarget />} />
           <Route path="*" element={<Navigate to="/chats" replace />} />
         </Routes>
         <TabBar />
@@ -210,27 +213,49 @@ export default function App() {
     if (!isNativePlatform()) return
     let cleanup: (() => void) | undefined
     import('@capacitor/app').then(({ App: CapApp }) => {
-      const listener = CapApp.addListener('appUrlOpen', (event) => {
-        console.log('[DeepLink] URL opened:', event.url)
+      const openDeepLink = (eventUrl: string) => {
+        console.log('[DeepLink] URL opened:', eventUrl)
         // paperphone://chat/123  → /chat/123
         // paperphone://user/abc  → /user/abc
         // paperphone://add-friend?id=xxx → /contacts?add=xxx
         try {
-          const url = new URL(event.url)
-          const path = url.pathname || url.host + (url.pathname || '')
+          const url = new URL(eventUrl)
+          const path = url.host + (url.pathname || '')
           if (path) {
             window.location.href = '/' + path.replace(/^\/+/, '')
           }
         } catch {
           // Fallback: strip scheme and navigate
-          const path = event.url.replace(/^paperphone:\/\//, '')
+          const path = eventUrl.replace(/^paperphone:\/\//, '')
           if (path) window.location.href = '/' + path
         }
-      })
+      }
+      const listener = CapApp.addListener('appUrlOpen', event => openDeepLink(event.url))
+      CapApp.getLaunchUrl().then(event => { if (event?.url) openDeepLink(event.url) })
       cleanup = () => { listener.then(l => l.remove()) }
     })
     return () => { cleanup?.() }
   }, [])
+
+  // Share extensions are not guaranteed to be allowed to launch their
+  // containing app. If iOS requires the user to open us manually, resume the
+  // pending handoff as soon as the app becomes active.
+  useEffect(() => {
+    if (!isNativePlatform() || !token || hydratedAccount !== user?.id) return
+    let cleanup: (() => void) | undefined
+    const resumePendingShare = async () => {
+      if (window.location.pathname === '/share' || new URLSearchParams(window.location.search).get('share') === '1') return
+      if (await getPendingSharedFile()) window.location.href = '/share'
+    }
+    resumePendingShare().catch(() => undefined)
+    import('@capacitor/app').then(({ App: CapApp }) => {
+      const listener = CapApp.addListener('appStateChange', state => {
+        if (state.isActive) resumePendingShare().catch(() => undefined)
+      })
+      cleanup = () => { listener.then(item => item.remove()) }
+    })
+    return () => cleanup?.()
+  }, [hydratedAccount, token, user?.id])
 
   return (
     <BrowserRouter>
@@ -242,7 +267,10 @@ export default function App() {
           hydratedAccount === user?.id
             ? <ProtectedLayout />
             : secureHydrationError
-              ? <div className="empty-state"><div>安全密钥加载失败，请关闭并重新打开应用。</div></div>
+              ? <div className="empty-state">
+                  <div>安全密钥加载失败，请关闭并重新打开应用。</div>
+                  {import.meta.env.DEV && <div style={{ marginTop: 12, padding: '0 20px', fontSize: 12, wordBreak: 'break-word' }}>{secureHydrationError}</div>}
+                </div>
               : null
         ) : <Navigate to="/login" replace />} />
       </Routes>

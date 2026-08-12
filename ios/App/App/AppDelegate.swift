@@ -9,6 +9,60 @@ public class PaperPhoneBridgeViewController: CAPBridgeViewController {
     public override func capacitorDidLoad() {
         bridge?.registerPluginInstance(SecureStoragePlugin())
         bridge?.registerPluginInstance(KeepAwakePlugin())
+        bridge?.registerPluginInstance(SharedFilePlugin())
+    }
+}
+
+@objc(SharedFile)
+public class SharedFilePlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "SharedFile"
+    public let jsName = "SharedFile"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "getPending", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clearPending", returnType: CAPPluginReturnPromise)
+    ]
+
+    private let appGroup = "group.com.fm619tech.paperphoneplus"
+    private let metadataKey = "pendingSharedFile"
+
+    @objc func getPending(_ call: CAPPluginCall) {
+        guard let defaults = UserDefaults(suiteName: appGroup),
+              let metadata = defaults.dictionary(forKey: metadataKey),
+              let relativePath = metadata["relativePath"] as? String,
+              let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else {
+            call.resolve(["file": NSNull()])
+            return
+        }
+        let fileURL = container.appendingPathComponent(relativePath)
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            defaults.removeObject(forKey: metadataKey)
+            call.resolve(["file": NSNull()])
+            return
+        }
+        call.resolve(["file": [
+            "id": metadata["id"] as? String ?? "",
+            "name": metadata["name"] as? String ?? fileURL.lastPathComponent,
+            "mimeType": metadata["mimeType"] as? String ?? "application/octet-stream",
+            "size": metadata["size"] as? NSNumber ?? 0,
+            "path": fileURL.path
+        ]])
+    }
+
+    @objc func clearPending(_ call: CAPPluginCall) {
+        guard let defaults = UserDefaults(suiteName: appGroup) else { call.resolve(); return }
+        let metadata = defaults.dictionary(forKey: metadataKey)
+        if let requestedID = call.getString("id"),
+           let storedID = metadata?["id"] as? String,
+           requestedID != storedID {
+            call.resolve()
+            return
+        }
+        if let relativePath = metadata?["relativePath"] as? String,
+           let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) {
+            try? FileManager.default.removeItem(at: container.appendingPathComponent(relativePath))
+        }
+        defaults.removeObject(forKey: metadataKey)
+        call.resolve()
     }
 }
 

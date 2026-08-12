@@ -16,6 +16,7 @@ import { decodeMessagePayload, encodeMessagePayload, type ReplyReference } from 
 import { cacheSticker, cacheStickerPack } from '../utils/stickerCache'
 import { readOfflineData, writeOfflineData } from '../utils/offlineCache'
 import { useKeepAwake } from '../hooks/useKeepAwake'
+import { clearPendingSharedFile, getPendingSharedFile, readPendingSharedFile } from '../api/sharedFile'
 
 // Auto-delete options (seconds)
 const AUTO_DELETE_OPTIONS = [
@@ -371,6 +372,7 @@ export default function Chat() {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const longPressOriginRef = useRef<{ x: number; y: number } | null>(null)
   const suppressMessageClickRef = useRef(false)
+  const sharedFileHandledRef = useRef(false)
   recordVoiceModeRef.current = recordVoiceMode
   useKeepAwake(isRecording)
 
@@ -802,6 +804,32 @@ export default function Chat() {
       setSending(false)
     }
   }
+
+  // A Share Extension handoff lands here after the user chooses a contact.
+  // Upload through the existing authenticated path, then send through the same
+  // encrypted WebSocket flow as an attachment selected inside the chat.
+  useEffect(() => {
+    if (searchParams.get('share') !== '1' || sharedFileHandledRef.current || !wsConnected) return
+    sharedFileHandledRef.current = true
+    ;(async () => {
+      const pending = await getPendingSharedFile()
+      if (!pending) throw new Error('Shared file is no longer available')
+      const file = await readPendingSharedFile(pending)
+      const isImage = file.type.startsWith('image/')
+      const isVideo = file.type.startsWith('video/')
+      const msgType = isImage ? 'image' : isVideo ? 'video' : 'file'
+      const label = isImage ? t('chat.uploading_image') : isVideo ? t('chat.uploading_video') : t('chat.uploading_file')
+      const { url } = await uploadWithProgress(file, label)
+      const content = isImage ? url : JSON.stringify({ url, fileName: file.name, fileSize: file.size, fileType: file.type })
+      await sendMessage(content, msgType, { url, fileName: file.name, fileSize: file.size, fileType: file.type })
+      await clearPendingSharedFile(pending.id)
+      navigate(`/chat/${id}`, { replace: true })
+    })().catch(error => {
+      console.error('[Share] Send failed:', error)
+      sharedFileHandledRef.current = false
+      alert(t('chat.upload_failed'))
+    })
+  }, [id, navigate, searchParams, t, wsConnected])
 
   // ── Media upload handlers ──
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
