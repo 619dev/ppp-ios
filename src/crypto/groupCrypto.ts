@@ -12,6 +12,7 @@
 
 import { initSodium, encryptHybrid, decryptHybrid } from './ratchet'
 import { deleteSecureSecret, getSecureSecret, hasNativeSecureStorage, setSecureSecret } from '../api/secure-storage'
+import { unprotectPresentationText } from './presentationCrypto'
 
 // ── Sender Key Store ────────────────────────────────────────────────────────
 
@@ -200,7 +201,7 @@ export async function decryptWithSenderKey(
   const nonce = sodium.from_base64(nonceBase64)
   const ct = sodium.from_base64(ciphertextBase64)
   const plain = sodium.crypto_secretbox_open_easy(ct, nonce, key)
-  return sodium.to_string(plain)
+  return unprotectPresentationText(sodium.to_string(plain))
 }
 
 // ── Sender Key Distribution ─────────────────────────────────────────────────

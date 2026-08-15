@@ -8,6 +8,12 @@
 
 ---
 
+## What's New in 2.4.1
+
+- Encrypted sends now fail closed instead of falling back to plaintext, and each message reports its actual `PQ v2`, `X25519 ↓`, or `SK vN` protocol.
+- Added an optional chat-history password, eight presentation codecs, and automatic locking 5/15/30/60 minutes after leaving the foreground.
+- Locked or incorrectly unlocked histories show presentation ciphertext only; identity private keys and Sender Keys remain protected by iOS Keychain, with complete UI copy in all eight languages.
+
 ## What's New in 2.4.0
 
 - Added an iOS Share Extension for sending files from Files, Photos, and other apps to PaperPhonePlus contacts.

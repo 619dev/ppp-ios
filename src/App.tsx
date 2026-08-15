@@ -4,6 +4,7 @@ import { hydrateEncryptedMessageCache, useStore } from './store'
 import { useSocket } from './hooks/useSocket'
 import { ensureIdentityKeys } from './crypto/identity'
 import { hydrateSenderKeys } from './crypto/groupCrypto'
+import { handlePresentationAppState, hydratePresentationCrypto, isPresentationUnlocked, presentationCiphertextForPlaintext } from './crypto/presentationCrypto'
 import { applyNativeProxy } from './api/proxy-bridge'
 import Login from './pages/Login'
 import Chats from './pages/Chats'
@@ -182,6 +183,7 @@ export default function App() {
     Promise.all([
       ensureIdentityKeys(user.id),
       hydrateSenderKeys(user.id),
+      hydratePresentationCrypto(user.id),
       hydrateEncryptedMessageCache(user.id),
     ]).then(([keys]) => {
       if (!keys) throw new Error('Identity keys are unavailable')
@@ -195,6 +197,27 @@ export default function App() {
     })
     return () => { cancelled = true }
   }, [token, user?.id])
+
+  useEffect(() => {
+    const onVisibility = () => handlePresentationAppState(document.visibilityState === 'visible')
+    const onPresentationState = () => {
+      if (isPresentationUnlocked()) return
+      const messages = useStore.getState().messages
+      useStore.setState({ messages: Object.fromEntries(Object.entries(messages).map(([chatId, items]) => [
+        chatId, items.map(({ decrypted, ...message }) => ({ ...message, ...(presentationCiphertextForPlaintext(decrypted) ? { decrypted: presentationCiphertextForPlaintext(decrypted) } : {}) })),
+      ])) })
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('paperphone:presentation-state-changed', onPresentationState)
+    let removeNative: (() => void) | undefined
+    import('@capacitor/app').then(({ App: CapApp }) => CapApp.addListener('appStateChange', ({ isActive }) => handlePresentationAppState(isActive)))
+      .then(handle => { removeNative = () => void handle.remove() }).catch(() => {})
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('paperphone:presentation-state-changed', onPresentationState)
+      removeNative?.()
+    }
+  }, [])
 
   // Apply persisted proxy settings on app startup (native iOS)
   useEffect(() => {
