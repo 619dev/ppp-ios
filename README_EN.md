@@ -8,7 +8,9 @@
 
 ---
 
-## What's New in 2.4.3
+## What's New in 2.4.4
+
+- Fixed the locked extra-encryption dialog so it requests the unlock password instead of asking users to set one, across all eight languages.
 
 - Fixed a security issue that allowed extra text-appearance encryption to be disabled without password verification; the correct extra password must now be re-entered even while unlocked.
 - Text appearance now hides protocol metadata and optimistic caches no longer retain original message bodies.

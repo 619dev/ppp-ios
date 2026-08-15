@@ -149,6 +149,7 @@ export const fr: Record<string, string> = {
   "chat.presentation_desc": "Chiffre le contenu avec un mot de passe supplémentaire, puis le convertit dans l’apparence choisie. Les deux correspondants doivent utiliser le même mot de passe.",
   "chat.presentation_codec": "Apparence du texte",
   "chat.presentation_enable": "Activer le chiffrement supplémentaire",
+  "chat.presentation_unlock_password_prompt": "Saisissez le mot de passe de déverrouillage",
   "chat.presentation_password_prompt": "Saisissez un mot de passe supplémentaire (8 caractères minimum)",
   "chat.presentation_password_confirm": "Saisissez de nouveau le mot de passe",
   "chat.presentation_disable_password_prompt": "Saisissez le mot de passe supplémentaire pour désactiver le chiffrement",

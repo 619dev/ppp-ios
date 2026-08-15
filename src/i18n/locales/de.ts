@@ -149,6 +149,7 @@ export const de: Record<string, string> = {
   "chat.presentation_desc": "Verschlüsselt Nachrichten mit einem zusätzlichen Passwort und wandelt sie in die gewählte Textdarstellung um. Beide Seiten benötigen dasselbe Passwort.",
   "chat.presentation_codec": "Textdarstellung",
   "chat.presentation_enable": "Zusätzliche Verschlüsselung aktivieren",
+  "chat.presentation_unlock_password_prompt": "Entsperrpasswort eingeben",
   "chat.presentation_password_prompt": "Zusätzliches Passwort eingeben (mindestens 8 Zeichen)",
   "chat.presentation_password_confirm": "Passwort erneut eingeben",
   "chat.presentation_disable_password_prompt": "Zusatzpasswort eingeben, um die Verschlüsselung zu deaktivieren",

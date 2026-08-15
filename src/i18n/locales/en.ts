@@ -467,6 +467,7 @@ export const en: Record<string, string> = {
   'chat.presentation_desc': 'Encrypt message bodies with an extra password, then convert them to the selected text appearance. Both parties need the same password.',
   'chat.presentation_codec': 'Text appearance',
   'chat.presentation_enable': 'Enable extra encryption',
+  'chat.presentation_unlock_password_prompt': 'Enter the unlock password',
   'chat.presentation_password_prompt': 'Set an extra password (at least 8 characters)',
   'chat.presentation_password_confirm': 'Enter the password again',
   'chat.presentation_disable_password_prompt': 'Enter the extra password to disable encryption',

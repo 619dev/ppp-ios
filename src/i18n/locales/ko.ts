@@ -147,6 +147,7 @@ export const ko: Record<string, string> = {
   "chat.presentation_desc": "추가 비밀번호로 메시지 본문을 암호화한 뒤 선택한 텍스트 모양으로 변환합니다. 양쪽에서 같은 비밀번호를 설정해야 합니다.",
   "chat.presentation_codec": "텍스트 모양",
   "chat.presentation_enable": "추가 암호화 사용",
+  "chat.presentation_unlock_password_prompt": "잠금 해제 비밀번호 입력",
   "chat.presentation_password_prompt": "추가 비밀번호 입력(8자 이상)",
   "chat.presentation_password_confirm": "비밀번호 다시 입력",
   "chat.presentation_disable_password_prompt": "추가 암호화를 끄려면 추가 비밀번호를 입력하세요",
