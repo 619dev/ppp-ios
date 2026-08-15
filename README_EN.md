@@ -8,8 +8,9 @@
 
 ---
 
-## What's New in 2.4.2
+## What's New in 2.4.3
 
+- Fixed a security issue that allowed extra text-appearance encryption to be disabled without password verification; the correct extra password must now be re-entered even while unlocked.
 - Text appearance now hides protocol metadata and optimistic caches no longer retain original message bodies.
 - Extra message-history encryption moved to Profile > Message privacy and applies globally to all chats.
 
