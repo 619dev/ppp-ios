@@ -8,44 +8,9 @@
 
 ---
 
-## What's New in 2.4.6
+## Changelog
 
-- Text appearance is now clearly documented as extra insurance above the existing end-to-end encryption: the shared extra password encrypts and renders the body first, followed by private-chat E2EE (X25519 / ML-KEM-768) or group Sender Key encryption.
-- Both private-chat participants, or every group member, must agree on and configure the same extra password; it is never uploaded or synchronized.
-- If passwords differ, E2EE and delivery still work, but recipients see only styled ciphertext and cannot read the original body.
-- This feature never replaces, bypasses, or downgrades the original E2EE; the Profile > Message privacy explanation is updated in all eight UI languages.
-
-## What's New in 2.4.4
-
-- Fixed the locked extra-encryption dialog so it requests the unlock password instead of asking users to set one, across all eight languages.
-
-- Fixed a security issue that allowed extra text-appearance encryption to be disabled without password verification; the correct extra password must now be re-entered even while unlocked.
-- Text appearance now hides protocol metadata and optimistic caches no longer retain original message bodies.
-- Extra message-history encryption moved to Profile > Message privacy and applies globally to all chats.
-
-- Encrypted sends now fail closed instead of falling back to plaintext, and each message reports its actual `PQ v2`, `X25519 ↓`, or `SK vN` protocol.
-- Added an optional chat-history password, eight presentation codecs, and automatic locking 5/15/30/60 minutes after leaving the foreground.
-- Locked or incorrectly unlocked histories show presentation ciphertext only; identity private keys and Sender Keys remain protected by iOS Keychain, with complete UI copy in all eight languages.
-
-## What's New in 2.4.0
-
-- Added an iOS Share Extension for sending files from Files, Photos, and other apps to PaperPhonePlus contacts.
-
-## What's New in 2.3.9
-
-- Fixed legacy one-way friendship records causing an “Already friends” message while the contact remained invisible and unavailable for chat; adding the user again now repairs both directions and refreshes the contact list immediately.
-
-## What's New in 2.3.8
-
-- Fixed the camera potentially remaining active when the scanner is closed during the permission prompt.
-- Fixed the scanner back button's touch layering for reliable closing on iOS.
-- Existing friends are now identified and disabled in user search results to prevent duplicate requests.
-
-## What's New in 2.3.7
-
-- Fixed an app startup failure on fresh installs or upgrades that retained a session without a local identity key.
-- Identity keys are now securely restored or initialized during startup, and invalid Keychain data left by interrupted migrations is removed.
-- Temporary server unavailability no longer blocks local secure-state initialization; key synchronization can continue after connectivity is restored.
+The complete release history has moved to [changelog.md](changelog.md).
 
 ---
 
