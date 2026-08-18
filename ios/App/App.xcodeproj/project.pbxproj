@@ -418,7 +418,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.4.6;
+				MARKETING_VERSION = 2.4.7;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = com.fm619tech.paperphoneplus;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -443,7 +443,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.4.6;
+				MARKETING_VERSION = 2.4.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fm619tech.paperphoneplus;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "PaperPhone AppStore 2.4.0";
@@ -468,7 +468,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.4.6;
+				MARKETING_VERSION = 2.4.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fm619tech.paperphoneplus.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -493,7 +493,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.4.6;
+				MARKETING_VERSION = 2.4.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fm619tech.paperphoneplus.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "PaperPhone Share AppStore 2.4.0";
