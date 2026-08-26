@@ -61,7 +61,8 @@ async function retryDecryptGroupMessages(groupId: string, senderId: string) {
       if (msg.ciphertext && nonce) {
         try {
           const text = await decryptWithSenderKey(msg.ciphertext, nonce, sk.senderKey)
-          useStore.getState().updateMessage(groupId, msg.id, { decrypted: text })
+          const unprotected = await unprotectPresentationText(text)
+          useStore.getState().updateMessage(groupId, msg.id, { decrypted: unprotected })
         } catch (err) {
           console.warn(`[useSocket] Retry decrypt failed for msg ${msg.id}:`, err)
         }
@@ -127,10 +128,12 @@ export function useSocket() {
               const isMe = data.from === myId
               if (isMe && data.self_ciphertext && data.self_header) {
                 const text = await decryptHybrid(data.self_header, keys.ik_priv, null, data.self_ciphertext)
-                msgToAdd = { ...data, decrypted: text }
+                const unprotected = await unprotectPresentationText(text)
+                msgToAdd = { ...data, decrypted: unprotected }
               } else if (!isMe) {
                 const text = await decryptHybrid(data.header, keys.ik_priv, null, data.ciphertext)
-                msgToAdd = { ...data, decrypted: text }
+                const unprotected = await unprotectPresentationText(text)
+                msgToAdd = { ...data, decrypted: unprotected }
               }
             }
           } catch {
@@ -160,7 +163,8 @@ export function useSocket() {
               }
               if (sk) {
                 const text = await decryptWithSenderKey(data.ciphertext, data.nonce, sk.senderKey)
-                msgToAdd = { ...data, decrypted: text }
+                const unprotected = await unprotectPresentationText(text)
+                msgToAdd = { ...data, decrypted: unprotected }
               } else {
                 // Still don't have sender key — store as 🔒 but keep nonce in data for retry
                 console.warn(`[useSocket] Still no sender key for ${data.from} in group ${data.group_id} after retries. Message will show 🔒`)

@@ -4,7 +4,7 @@ import { hydrateEncryptedMessageCache, useStore } from './store'
 import { useSocket } from './hooks/useSocket'
 import { ensureIdentityKeys } from './crypto/identity'
 import { hydrateSenderKeys } from './crypto/groupCrypto'
-import { handlePresentationAppState, hydratePresentationCrypto, isPresentationUnlocked, presentationCiphertextForPlaintext } from './crypto/presentationCrypto'
+import { getPresentationSettings, handlePresentationAppState, hydratePresentationCrypto, isPresentationUnlocked, presentationCiphertextForPlaintext, unlockPresentationCrypto } from './crypto/presentationCrypto'
 import { applyNativeProxy } from './api/proxy-bridge'
 import Login from './pages/Login'
 import Chats from './pages/Chats'
@@ -34,6 +34,7 @@ import { initLocalNotifications } from './api/localNotification'
 import { setAppBadgeCount } from './api/appBadge'
 import { useAutoDeleteCleanup } from './hooks/useAutoDeleteCleanup'
 import { getPendingSharedFile } from './api/sharedFile'
+import { useI18n } from './hooks/useI18n'
 
 function ProtectedLayout() {
   useSocket()
@@ -165,6 +166,22 @@ export default function App() {
   const theme = useStore(s => s.theme)
   const [hydratedAccount, setHydratedAccount] = useState<string | null>(null)
   const [secureHydrationError, setSecureHydrationError] = useState<string | null>(null)
+  const [showPresentationUnlock, setShowPresentationUnlock] = useState(false)
+  const [presentationPassword, setPresentationPassword] = useState('')
+  const [presentationUnlockError, setPresentationUnlockError] = useState('')
+  const [presentationUnlockBusy, setPresentationUnlockBusy] = useState(false)
+  const { t } = useI18n()
+
+  const syncPresentationUnlockPrompt = () => {
+    const shouldPrompt = Boolean(useStore.getState().token && useStore.getState().user?.id)
+      && getPresentationSettings().enabled
+      && !isPresentationUnlocked()
+    setShowPresentationUnlock(shouldPrompt)
+    if (!shouldPrompt) {
+      setPresentationPassword('')
+      setPresentationUnlockError('')
+    }
+  }
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -187,7 +204,10 @@ export default function App() {
       hydrateEncryptedMessageCache(user.id),
     ]).then(([keys]) => {
       if (!keys) throw new Error('Identity keys are unavailable')
-      if (!cancelled) setHydratedAccount(user.id)
+      if (!cancelled) {
+        syncPresentationUnlockPrompt()
+        setHydratedAccount(user.id)
+      }
     }).catch(err => {
       console.error('[App] Secure state hydration failed:', err)
       if (!cancelled) {
@@ -198,14 +218,39 @@ export default function App() {
     return () => { cancelled = true }
   }, [token, user?.id])
 
+  const unlockPresentationAtStartup = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!presentationPassword || presentationUnlockBusy) return
+    setPresentationUnlockBusy(true)
+    setPresentationUnlockError('')
+    try {
+      if (await unlockPresentationCrypto(presentationPassword)) {
+        setShowPresentationUnlock(false)
+        setPresentationPassword('')
+      } else {
+        setPresentationUnlockError(t('chat.presentation_startup_wrong_password'))
+      }
+    } finally {
+      setPresentationUnlockBusy(false)
+    }
+  }
+
+  const cancelPresentationUnlock = () => {
+    setShowPresentationUnlock(false)
+    setPresentationPassword('')
+    setPresentationUnlockError('')
+  }
+
   useEffect(() => {
     const onVisibility = () => handlePresentationAppState(document.visibilityState === 'visible')
     const onPresentationState = () => {
-      if (isPresentationUnlocked()) return
-      const messages = useStore.getState().messages
-      useStore.setState({ messages: Object.fromEntries(Object.entries(messages).map(([chatId, items]) => [
-        chatId, items.map(({ decrypted, ...message }) => ({ ...message, ...(presentationCiphertextForPlaintext(decrypted) ? { decrypted: presentationCiphertextForPlaintext(decrypted) } : {}) })),
-      ])) })
+      syncPresentationUnlockPrompt()
+      if (!isPresentationUnlocked()) {
+        const messages = useStore.getState().messages
+        useStore.setState({ messages: Object.fromEntries(Object.entries(messages).map(([chatId, items]) => [
+          chatId, items.map(({ decrypted, ...message }) => ({ ...message, ...(presentationCiphertextForPlaintext(decrypted) ? { decrypted: presentationCiphertextForPlaintext(decrypted) } : {}) })),
+        ])) })
+      }
     }
     document.addEventListener('visibilitychange', onVisibility)
     window.addEventListener('paperphone:presentation-state-changed', onPresentationState)
@@ -297,6 +342,43 @@ export default function App() {
               : null
         ) : <Navigate to="/login" replace />} />
       </Routes>
+      {showPresentationUnlock && (
+        <div className="modal-overlay" role="presentation">
+          <form className="modal" role="dialog" aria-modal="true" aria-labelledby="presentation-startup-title" onSubmit={unlockPresentationAtStartup}>
+            <h2 id="presentation-startup-title" style={{ fontSize: 17, fontWeight: 600, marginBottom: 16 }}>
+              {t('profile.message_privacy')}
+            </h2>
+            <div className="input-group" style={{ marginBottom: 12 }}>
+              <label htmlFor="presentation-startup-password">{t('chat.presentation_startup_password_prompt')}</label>
+              <input
+                className="input"
+                id="presentation-startup-password"
+                type="password"
+                autoComplete="current-password"
+                autoFocus
+                value={presentationPassword}
+                onChange={event => {
+                  setPresentationPassword(event.target.value)
+                  if (presentationUnlockError) setPresentationUnlockError('')
+                }}
+              />
+            </div>
+            {presentationUnlockError && (
+              <div role="alert" style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>
+                {presentationUnlockError}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button type="button" className="btn btn-full" onClick={cancelPresentationUnlock} disabled={presentationUnlockBusy}>
+                {t('common.cancel')}
+              </button>
+              <button type="submit" className="btn btn-primary btn-full" disabled={!presentationPassword || presentationUnlockBusy}>
+                {presentationUnlockBusy ? t('common.loading') : t('common.confirm')}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </BrowserRouter>
   )
 }

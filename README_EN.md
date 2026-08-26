@@ -12,6 +12,8 @@
 
 The complete release history has moved to [changelog.md](changelog.md).
 
+Current version: **2.4.9** (iOS build 46). This release adopts the latest PaperPhone design system, improves notch and landscape safe areas and system accessibility preferences, and prompts signed-in users for the optional extra-encryption password when Message privacy is enabled but locked.
+
 ---
 
 ## About
@@ -34,6 +36,8 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 | 🎙️ Real-time Voice Changer | 3 modes (0.8x / 1.0x / 1.2x), powered by Web Audio API |
 | 👥 Group Chat | Up to 2000 members, encrypted & unencrypted modes |
 | 💬 Messaging | Text, images, videos, documents, voice messages, emoji panel, Telegram sticker packs |
+| 🔏 Message Privacy | Optional extra password and eight text appearances, with secure unlock prompting after login or automatic locking |
+| 🎨 Native-oriented UI | Platform system typography, content-first message surfaces, iPhone safe areas, and system accessibility preferences |
 | 📴 Offline Browsing | Caches contacts, groups, chat history, Moments, Timeline posts, and media, with one-tap cleanup |
 | 📷 QR Scanner | Uses native `BarcodeDetector` with a `jsQR` fallback for iOS WKWebView |
 | 🌐 Moments | Post updates, likes, comments, tag-based visibility control |
@@ -60,6 +64,8 @@ When enabled, every message is processed in this order:
 The extra password is never uploaded, synchronized automatically, or distributed by the server. Both people in a private chat must set the same password; every group member who needs to read the plaintext must also set that same password. Text appearances do not need to match: every message carries its own appearance identifier, so the recipient automatically detects and decodes the sender's choice. For example, one person may send Buddhist text while another sends Hangul; if the extra password matches, both decrypt normally. A user's appearance setting controls only the ciphertext appearance of messages they send. If the password is missing, locked, or different, messages are still sent and received normally and the original E2EE layer still decrypts successfully, but the app can display only the appearance ciphertext—not the original text.
 
 The app does not persist the extra password. While unlocked it exists only in the current process memory; locally, the app stores only a random salt and AES-GCM verification data used to check whether an entered password is correct. Users can lock immediately or automatically 5, 15, 30, or 60 minutes after the app leaves the foreground. This layer adds an independent shared secret beyond E2EE; it does not replace a strong password, device lock, or system secure storage, and it cannot provide absolute protection on a fully compromised device while the password remains in memory.
+
+After sign-in and local secure-state restoration, the app displays an extra-password dialog whenever Message privacy is enabled but the current process is still locked. A correct password restores plaintext display; an incorrect password preserves the locked state and shows an error; users may also cancel and continue browsing appearance ciphertext. The dialog returns after an immediate lock or once the configured background auto-lock interval expires.
 
 ## Tech Stack
 
@@ -98,7 +104,7 @@ ppp-ios/
 ├── src/
 │   ├── main.tsx                # React entry point
 │   ├── App.tsx                 # Routing + auth guard
-│   ├── index.css               # Design system (dark/light, glassmorphism)
+│   ├── index.css               # Design system (themes, safe areas, accessibility)
 │   ├── api/                    # HTTP + WebSocket clients
 │   ├── crypto/
 │   │   ├── ratchet.ts          # ECDH + XSalsa20-Poly1305 encryption

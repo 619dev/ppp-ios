@@ -4,6 +4,24 @@ All notable changes and new features are recorded here. Historical entries below
 
 所有重要版本改动和新特性统一记录于此。下方历史条目由仓库原有文档迁移而来。
 
+## 2.4.9
+
+- Introduced the latest PaperPhone design system: platform-native typography, calmer gold controls, solid readable message surfaces, and reduced decorative gradients and glow.
+- Improved iPhone safe-area handling for headers and bottom navigation in portrait and landscape orientations.
+- Added accessibility fallbacks for reduced motion, reduced transparency, and increased contrast preferences.
+- Added an authenticated startup prompt for the optional extra-encryption password. When Message privacy is enabled but locked, users can unlock after login, see a localized error for an incorrect password, or cancel and continue viewing appearance ciphertext.
+- The unlock prompt is also restored after manual or automatic background locking, with localized copy in all eight supported languages.
+- Updated the app and native targets to version `2.4.9` (iOS build `46`), including the version shown at the bottom of Profile.
+
+- 引入最新 PaperPhone 设计系统：改用平台原生字体，收敛金色主控件样式，消息气泡使用稳定、易读的实体表面，并减少装饰性渐变与光晕。
+- 改进 iPhone 顶部标题栏和底部导航栏的安全区处理，兼容竖屏与横屏。
+- 新增“减少动态效果”“降低透明度”和“提高对比度”等系统辅助功能偏好的回退样式。
+- 新增登录后的额外加密密码提示框：启用“消息隐私”但尚未解锁时可直接输入密码；密码错误会显示本地化提示，也可取消并继续查看文本外观密文。
+- 手动锁定或离开前台触发自动锁定后会再次显示解锁提示，且已同步全部 8 种界面语言。
+- 应用及原生目标统一更新为 `2.4.9`（iOS build `46`），包括个人信息页底部显示的版本号。
+
+---
+
 ## 2.4.7
 
 - Fixed E2EE safety-number mismatches by deriving both views from the same pair of published identity keys; text appearance and its extra password remain independent of the E2EE safety number.

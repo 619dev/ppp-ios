@@ -8,7 +8,7 @@ import { get, post, put, uploadFileWithProgress, normalizeFileUrl } from '../api
 import { sendWs, onWs } from '../api/socket'
 import { getKeys } from '../crypto/keystore'
 import { encryptHybrid, decryptHybrid, inspectHybridProtocol } from '../crypto/ratchet'
-import { getPresentationSettings, protectPresentationText, unprotectPresentationText } from '../crypto/presentationCrypto'
+import { isPresentationUnlocked, protectPresentationText, unprotectPresentationText } from '../crypto/presentationCrypto'
 import { getMySenderKey, getSenderKey, generateSenderKey, encryptWithSenderKey, decryptWithSenderKey, distributeSenderKey, storeSenderKey, receiveSenderKey, isSenderKeyDistributed, markSenderKeyDistributed, removeSenderKey } from '../crypto/groupCrypto'
 import { Shield } from 'lucide-react'
 import { ChevronLeft, ChevronDown, Lock, Settings, Timer, ImageIcon, Film, Plus, Mic, Download, Paperclip, AlertTriangle, Clock, Package as PackageIcon, FileText, File as FileIcon, Image as LucideImage, Music, Video, Check, CheckCheck, Phone, VideoIcon, SendHorizonal, Smile, WifiOff, X, ZoomIn, ZoomOut } from 'lucide-react'
@@ -722,7 +722,7 @@ export default function Chat() {
         delivery_status: 'queued',
         from: user.id,
         msg_type: msgType,
-        decrypted: getPresentationSettings().enabled ? wireContent : displayWireContent,
+        decrypted: isPresentationUnlocked() ? displayWireContent : wireContent,
         ciphertext: (isGroup && !group?.encrypted) ? wireContent : '',
       }
       if (isGroup) {
