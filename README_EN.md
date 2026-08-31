@@ -12,7 +12,7 @@
 
 The complete release history has moved to [changelog.md](changelog.md).
 
-Current version: **2.4.9** (iOS build 46). This release adopts the latest PaperPhone design system, improves notch and landscape safe areas and system accessibility preferences, and prompts signed-in users for the optional extra-encryption password when Message privacy is enabled but locked.
+Current version: **2.5.1** (iOS build 47). This release absorbs the upstream 2.5.1 cleanup and offline-cache behavior, removes Web Push, OneSignal, browser notification settings, and the Profile PWA installation guide, and retains native APNS, local notifications, home-screen badges, and secure storage on iOS.
 
 ---
 
@@ -42,7 +42,7 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 | 📷 QR Scanner | Uses native `BarcodeDetector` with a `jsQR` fallback for iOS WKWebView |
 | 🌐 Moments | Post updates, likes, comments, tag-based visibility control |
 | 📰 Timeline | Xiaohongshu-style waterfall feed, anonymous posting supported |
-| 🔔 APNS Push | Native Apple Push Notification Service |
+| 🔔 Native Notifications | Uses Apple Push Notification Service (APNS) for remote push and local notifications for foreground messages; Web Push and OneSignal are not included |
 | 🔴 App Badge | Keeps the iOS home-screen badge synchronized with the in-app unread count |
 | 🌍 Multi-language | Chinese, English, Japanese, Korean, French, German, Russian, Spanish |
 | 🔑 Two-Factor Auth | TOTP (Google Authenticator compatible) + recovery codes |
@@ -127,7 +127,7 @@ ppp-ios/
 │       ├── GroupInfo.tsx        # Group info
 │       ├── Moments.tsx         # Moments (social feed)
 │       └── Timeline.tsx        # Timeline (waterfall feed)
-├── public/                     # Static assets
+├── public/                     # Static assets and offline media-cache service worker (no Web Push)
 ├── assets/                     # App assets
 ├── dist/                       # Build output
 └── build/                      # Build artifacts
@@ -140,7 +140,7 @@ ppp-ios/
 - **Node.js** ≥ 18
 - **npm** ≥ 9
 - **Xcode** ≥ 15 (with iOS 17+ SDK)
-- **CocoaPods** (for iOS native dependencies)
+- **Swift Package Manager** (Capacitor-managed iOS native dependencies)
 - macOS (required for iOS development)
 
 ---
@@ -159,12 +159,14 @@ git clone <repo-url> && cd ppp-ios
 npm install
 ```
 
-### 3. Local Development (Web Preview)
+### 3. Local UI Development
 
 ```bash
 npm run dev
 # Open http://localhost:5173
 ```
+
+This command is only for development-time UI inspection. The project no longer ships or deploys a standalone Web/PWA client.
 
 ### 4. Build and Sync to iOS
 
@@ -185,11 +187,30 @@ npx cap open ios
 2. Configure signing (Signing & Capabilities)
 3. Click Run (⌘R)
 
+### 6. Build for the Simulator from the Command Line
+
+Simulator builds must retain Xcode's `Sign to Run Locally` signature because identity keys and encrypted caches depend on the native Keychain. Do not pass `CODE_SIGNING_ALLOWED=NO`; it produces an app without the correct signing context and can make an existing signed-in session show a near-blank secure-key recovery error at startup.
+
+```bash
+xcodebuild \
+  -project ios/App/App.xcodeproj \
+  -scheme App \
+  -configuration Debug \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,id=<SIMULATOR_UDID>' \
+  -derivedDataPath /tmp/ppp-ios-simulator-signed \
+  ONLY_ACTIVE_ARCH=YES \
+  ARCHS=arm64 \
+  build
+```
+
+Installing over the existing simulator app preserves its login state and Keychain. Uninstall first only when account and local data should intentionally be erased.
+
 ---
 
 ## APNS Push Notification Setup
 
-This project uses APNS (Apple Push Notification Service) for native push notifications.
+This project uses APNS (Apple Push Notification Service) for remote notifications and Capacitor Local Notifications for messages received while the app is active. Web Push and OneSignal have been removed from the frontend entry point, settings UI, service worker, and static assets.
 
 ### Prerequisites
 
@@ -243,9 +264,8 @@ This project is the iOS client fork of [619dev/PaperPhonePlus](https://github.co
 For full system deployment (including backend server), please refer to the upstream documentation:
 - 🚀 [Zeabur One-click Deployment](https://zeabur.com/templates/SK6T93?referralCode=619dev)
 - 🐳 Docker Compose deployment
-- ▲ Vercel frontend deployment
 - 📡 Video call TURN configuration
-- 🔔 Push notifications (APNS / FCM / OneSignal / ntfy / Web Push)
+- 🔔 Native push notifications (iOS APNS / Android FCM and ntfy)
 
 ---
 

@@ -4,6 +4,28 @@ All notable changes and new features are recorded here. Historical entries below
 
 所有重要版本改动和新特性统一记录于此。下方历史条目由仓库原有文档迁移而来。
 
+## 2.5.1
+
+- Synchronized the iOS client with the upstream `2.5.1` frontend while preserving iOS-specific Keychain storage, encrypted local caches, Share Extension integration, APNS registration, local notifications, and badge synchronization.
+- Removed Web Push and OneSignal initialization, subscription management, browser notification controls, SDK loader, worker, and related source modules.
+- Removed the obsolete iOS PWA detection and “Add to Home Screen” guide from Profile, together with its translations in all eight supported languages; the project no longer ships a standalone Web/PWA client.
+- Simplified the service worker to offline-shell and media caching only. Uploaded images, video, and audio responses now use the dedicated media cache with `Vary`-independent lookup.
+- Regenerated the production frontend and synchronized the Capacitor iOS project.
+- Updated the application and native targets to version `2.5.1` (iOS build `47`), including the version shown at the bottom of Profile.
+- Corrected the simulator build procedure to retain Xcode's `Sign to Run Locally` signature. Disabling code signing caused native Keychain access to fail during secure-state hydration and displayed a near-blank startup error for existing sessions.
+- Verified the TypeScript/Vite production build, Capacitor iOS synchronization, and a locally signed arm64 Debug build on an iPhone 17 Pro Max simulator while preserving the existing Keychain-backed session.
+
+- 将 iOS 客户端同步至上游前端 `2.5.1`，同时保留 iOS 专用的 Keychain 安全存储、加密本地缓存、系统分享扩展、APNS 注册、本地通知和主屏角标同步。
+- 移除 Web Push 与 OneSignal 的初始化、订阅管理、浏览器通知设置、SDK 加载脚本、Worker 及相关源码模块。
+- 移除个人信息页中过时的 iOS PWA 检测、“添加到主屏幕”引导及全部 8 种语言文案；项目不再提供独立 Web/PWA 客户端。
+- Service Worker 现仅负责离线外壳与媒体缓存；上传的图片、视频和音频响应使用独立媒体缓存，并支持忽略 `Vary` 的缓存查找。
+- 重新生成生产前端资源并同步 Capacitor iOS 工程。
+- 应用及原生目标统一更新为 `2.5.1`（iOS build `47`），包括个人信息页底部显示的版本号。
+- 修正模拟器编译流程，必须保留 Xcode 的 `Sign to Run Locally` 本地签名。关闭代码签名会使原生 Keychain 在安全状态恢复阶段访问失败，并导致已有登录态显示近似白屏的启动错误页。
+- 已通过 TypeScript/Vite 生产构建、Capacitor iOS 同步，并在保留现有 Keychain 登录态的情况下通过 iPhone 17 Pro Max 模拟器 arm64 本地签名 Debug 编译与启动验证。
+
+---
+
 ## 2.4.9
 
 - Introduced the latest PaperPhone design system: platform-native typography, calmer gold controls, solid readable message surfaces, and reduced decorative gradients and glow.

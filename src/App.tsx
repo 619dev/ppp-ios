@@ -25,9 +25,6 @@ import GroupCallOverlay from './components/GroupCallOverlay'
 import NotificationToast from './components/NotificationToast'
 import { CallProvider } from './contexts/CallContext'
 import { GroupCallProvider } from './contexts/GroupCallContext'
-import { registerServiceWorker, subscribePush, isPushSubscribed } from './api/push'
-import { initOneSignal, loginOneSignal } from './api/onesignal'
-import { get, post } from './api/http'
 import { isNativePlatform } from './utils/platform'
 import { initNativePush } from './api/nativePush'
 import { initLocalNotifications } from './api/localNotification'
@@ -57,77 +54,6 @@ function ProtectedLayout() {
       // ── Local Notifications: for showing system banners from WebSocket messages ──
       // Works in the simulator too (unlike APNS remote push)
       initLocalNotifications().catch(e => console.warn('[LocalNotification] Init failed:', e))
-    } else {
-      // ── Web/PWA: use Service Worker + Web Push + OneSignal ──
-      registerServiceWorker().then(() => {
-        console.log('[Push] Service worker ready')
-      }).catch(() => {})
-
-      // Web Push (VAPID)
-      ;(async () => {
-        try {
-          if ('Notification' in window && Notification.permission === 'default') {
-            await Notification.requestPermission()
-          }
-          if ('Notification' in window && Notification.permission === 'granted') {
-            const alreadySub = await isPushSubscribed()
-            if (!alreadySub) {
-              const ok = await subscribePush()
-              if (ok) console.log('[Push] Web Push subscribed successfully')
-            }
-          }
-        } catch (e) {
-          console.warn('[Push] Web Push subscription failed:', e)
-        }
-      })()
-
-      // OneSignal Web SDK v16
-      ;(async () => {
-        try {
-          const token = useStore.getState().token
-          if (!token) return
-          const userId = getUserIdFromToken(token)
-          if (!userId) return
-          const ok = await initOneSignal()
-          if (ok) {
-            await loginOneSignal(userId)
-            console.log('[OneSignal] ✅ Web SDK v16 fully initialized')
-          }
-        } catch (e) {
-          console.warn('[OneSignal] Web SDK init failed:', e)
-        }
-      })()
-
-      // OneSignal Median.co native wrapper fallback
-      let attempt = 0
-      const maxAttempts = 20
-      const tryRegisterMedian = () => {
-        const w = window as any
-        if (w.median?.onesignal?.onesignalInfo) {
-          w.median.onesignal.onesignalInfo((info: any) => {
-            if (info?.oneSignalUserId) {
-              post('/api/push/onesignal', {
-                player_id: info.oneSignalUserId,
-                platform: info.platform || 'ios',
-              }).catch(() => {})
-            }
-          })
-        } else if (w.gonative?.onesignal?.onesignalInfo) {
-          w.gonative.onesignal.onesignalInfo((info: any) => {
-            if (info?.oneSignalUserId) {
-              post('/api/push/onesignal', {
-                player_id: info.oneSignalUserId,
-                platform: info.platform || 'ios',
-              }).catch(() => {})
-            }
-          })
-        } else {
-          attempt++
-          if (attempt < maxAttempts) setTimeout(tryRegisterMedian, 500)
-        }
-      }
-      tryRegisterMedian()
-
     }
   }, [])
 
@@ -381,19 +307,4 @@ export default function App() {
       )}
     </BrowserRouter>
   )
-}
-
-/**
- * Decode user_id from a JWT token without a library.
- * JWT format: header.payload.signature — we only need the payload.
- */
-function getUserIdFromToken(token: string): string | null {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-    return payload.id || payload.sub || null
-  } catch {
-    return null
-  }
 }

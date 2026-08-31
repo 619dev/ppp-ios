@@ -72,7 +72,6 @@ export const ru: Record<string, string> = {
   'profile.my_qr': 'Мой QR-код', 'profile.qr_scan_hint': 'Отсканируйте этот QR-код, чтобы добавить меня в друзья',
   'profile.notifications': 'Уведомления',
 
-  'pwa.install_title': 'Добавить на экран', 'pwa.install_step1': '1. Нажмите кнопку «Поделиться» ⬆️ в Safari', 'pwa.install_step2': '2. Прокрутите и нажмите «На экран «Домой»»', 'pwa.install_step3': '3. Нажмите «Добавить» в правом верхнем углу',
 
   'call.incoming': 'Входящий звонок', 'call.outgoing': 'Вызов...', 'call.connected': 'Подключён',
   'call.ended': 'Звонок завершён', 'call.video': 'Видеозвонок', 'call.voice': 'Голосовой звонок',

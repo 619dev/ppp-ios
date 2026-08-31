@@ -12,7 +12,7 @@
 
 完整版本更新记录已迁移至 [changelog.md](changelog.md)。
 
-当前版本：**2.4.9**（iOS build 46）。本次更新采用新版 PaperPhone 设计系统，完善刘海屏与横屏安全区、系统辅助功能适配，并在登录后为已启用但尚未解锁的“消息隐私”提供额外加密密码提示框。
+当前版本：**2.5.1**（iOS build 47）。本次更新同步上游前端的 2.5.1 清理与离线缓存策略，移除 Web Push、OneSignal、浏览器端通知设置及个人信息页的 PWA 安装引导，同时保留 iOS 原生 APNS、本地通知、主屏角标和安全存储能力。
 
 ---
 
@@ -42,7 +42,7 @@
 | 📷 扫一扫 | 支持原生 `BarcodeDetector`，并使用 `jsQR` 兼容 iOS WKWebView |
 | 🌐 朋友圈 | 发动态、点赞、评论、标签可见性控制 |
 | 📰 时间线 | 小红书风格双列瀑布流，支持匿名发帖 |
-| 🔔 APNS 推送 | Apple Push Notification Service 原生推送 |
+| 🔔 原生通知 | 使用 Apple Push Notification Service（APNS）接收远程推送，并用本地通知展示前台消息；不集成 Web Push 或 OneSignal |
 | 🔴 应用角标 | iOS 主屏角标与应用内未读消息数自动同步 |
 | 🌍 多语言 | 中/英/日/韩/法/德/俄/西，8 种语言 |
 | 🔑 两步验证 | TOTP (Google Authenticator 兼容) + 恢复码 |
@@ -127,7 +127,7 @@ ppp-ios/
 │       ├── GroupInfo.tsx        # 群信息
 │       ├── Moments.tsx         # 朋友圈
 │       └── Timeline.tsx        # 时间线
-├── public/                     # 静态资源
+├── public/                     # 静态资源及离线媒体缓存 Service Worker（不含 Web Push）
 ├── assets/                     # 应用资源
 ├── dist/                       # 构建输出
 └── build/                      # 构建产物
@@ -140,7 +140,7 @@ ppp-ios/
 - **Node.js** ≥ 18
 - **npm** ≥ 9
 - **Xcode** ≥ 15（含 iOS 17+ SDK）
-- **CocoaPods**（用于 iOS 原生依赖）
+- **Swift Package Manager**（由 Capacitor 自动管理 iOS 原生依赖）
 - macOS（iOS 开发必需）
 
 ---
@@ -159,12 +159,14 @@ git clone <repo-url> && cd ppp-ios
 npm install
 ```
 
-### 3. 本地开发（Web 预览）
+### 3. 本地界面调试
 
 ```bash
 npm run dev
 # 打开 http://localhost:5173
 ```
+
+此命令只用于开发期界面调试；项目不再提供或部署独立 Web/PWA 客户端。
 
 ### 4. 构建并同步到 iOS
 
@@ -185,11 +187,30 @@ npx cap open ios
 2. 配置签名（Signing & Capabilities）
 3. 点击 Run (⌘R)
 
+### 6. 命令行编译模拟器版本
+
+模拟器构建必须保留 Xcode 的 `Sign to Run Locally` 本地签名，因为身份密钥和加密缓存依赖原生 Keychain。不要传入 `CODE_SIGNING_ALLOWED=NO`；该参数会生成缺少正确应用签名上下文的产物，使已有登录态在启动恢复安全密钥时显示近似白屏的错误页。
+
+```bash
+xcodebuild \
+  -project ios/App/App.xcodeproj \
+  -scheme App \
+  -configuration Debug \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,id=<SIMULATOR_UDID>' \
+  -derivedDataPath /tmp/ppp-ios-simulator-signed \
+  ONLY_ACTIVE_ARCH=YES \
+  ARCHS=arm64 \
+  build
+```
+
+覆盖安装可保留模拟器中的登录状态和 Keychain；只有明确需要清除账号与本地数据时才应先卸载应用。
+
 ---
 
 ## APNS 推送配置
 
-本项目使用 APNS (Apple Push Notification Service) 进行原生推送通知。
+本项目仅使用 APNS (Apple Push Notification Service) 进行远程推送，并使用 Capacitor Local Notifications 展示应用内收到的消息。Web Push 与 OneSignal 已从前端入口、设置页面、Service Worker 和静态资源中移除。
 
 ### 前提条件
 
@@ -243,9 +264,8 @@ APNS_RELAY_KEY=EzmpqftbsENaRUO6BTABxLV96q7RuEDyokXJr1DWdDjL54cLg7yXVUQqydCQvxrX
 如需部署完整系统（含后端服务器），请参阅上游项目文档：
 - 🚀 [Zeabur 一键云部署](https://zeabur.com/templates/SK6T93?referralCode=619dev)
 - 🐳 Docker Compose 一键部署
-- ▲ Vercel 前端部署
 - 📡 视频通话 TURN 配置
-- 🔔 推送通知（APNS / FCM / OneSignal / ntfy / Web Push）
+- 🔔 原生推送通知（iOS APNS / Android FCM 与 ntfy）
 
 ---
 

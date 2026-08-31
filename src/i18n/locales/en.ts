@@ -211,11 +211,6 @@ export const en: Record<string, string> = {
   'profile.push_failed': 'Failed to enable notifications. Check console for details.',
 
 
-  // PWA Install
-  'pwa.install_title': 'Add to Home Screen',
-  'pwa.install_step1': '1. Tap the Share button ⬆️ in Safari toolbar',
-  'pwa.install_step2': '2. Scroll down and tap "Add to Home Screen"',
-  'pwa.install_step3': '3. Tap "Add" in the top-right corner',
 
   'call.incoming': 'Incoming Call',
   'call.outgoing': 'Calling...',
