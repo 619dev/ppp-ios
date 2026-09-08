@@ -8,6 +8,7 @@ import { useCallContext, formatDuration } from '../contexts/CallContext'
 import { useStore } from '../store'
 import { useI18n } from '../hooks/useI18n'
 import { Phone, PhoneOff, PhoneIncoming, Mic, MicOff, CameraOff, Video as VideoIcon, AudioLines } from 'lucide-react'
+import { normalizeFileUrl } from '../api/http'
 
 export default function CallOverlay() {
   const call = useCallContext()
@@ -77,7 +78,7 @@ export default function CallOverlay() {
             backdropFilter: 'blur(10px)',
           }}>
             {peer?.avatar
-              ? <img src={peer.avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              ? <img src={normalizeFileUrl(peer.avatar)} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
               : (peerName?.[0] || '?')}
           </div>
         )}

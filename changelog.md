@@ -4,6 +4,28 @@ All notable changes and new features are recorded here. Historical entries below
 
 所有重要版本改动和新特性统一记录于此。下方历史条目由仓库原有文档迁移而来。
 
+## 2.5.2
+
+- Synchronized the iOS client with the upstream `2.5.2` frontend while preserving iOS-specific Keychain storage, encrypted local caches, Share Extension integration, APNS registration, local notifications, and badge synchronization.
+- Added private/group chat batch downloads for up to 20 image, video, voice, or file messages, including original-filename handling, progress display, and partial-failure reporting.
+- Fixed iOS batch downloads to use a native Files export sheet instead of unsupported WKWebView `blob:` downloads; success is now reported only after the user chooses a destination, while cancellation leaves the selection intact without a false completion message.
+- Added server-local file storage compatibility. Avatars, group avatars, Moments, and Timeline media now request permanent storage, while private/group chat attachments use temporary storage governed by the server retention policy.
+- Added startup discovery of the server's legacy R2 public URL so previously stored file links can be transparently mapped to the authenticated file endpoint; the last successful mapping remains available while offline or when connected to an older server.
+- Fixed legacy avatar rendering across chats, contacts, profiles, group views, Moments, Timeline, notifications, and call overlays by applying the same legacy-file URL mapping already used by post media.
+- Updated the frontend package, Profile display, main iOS target, and Share Extension to `2.5.2` (iOS build `48`).
+- Regenerated the production frontend, synchronized the Capacitor iOS project, and verified the TypeScript/Vite build, `git diff --check`, and an unsigned iOS Simulator compile.
+
+- 将 iOS 客户端同步至上游前端 `2.5.2`，同时保留 iOS 专用的 Keychain 安全存储、加密本地缓存、系统分享扩展、APNS 注册、本地通知和主屏角标同步。
+- 私聊和群聊新增批量下载：可一次选择最多 20 条图片、视频、语音或普通文件消息，并支持原始文件名处理、下载进度及部分失败提示。
+- 修复 iOS 批量下载：改用原生“文件”导出面板，不再依赖 WKWebView 不支持的 `blob:` 下载；仅在用户选定保存位置后提示成功，取消操作不会误报完成并会保留当前选择。
+- 适配服务器本地文件存储：用户头像、群头像、朋友圈和时间线媒体请求永久存储；私聊及群聊附件使用由服务端保留策略管理的临时存储。
+- 启动时读取服务端旧 R2 公共地址配置，将历史文件链接透明映射到鉴权文件接口；离线或连接旧版服务端时继续使用上次成功获取的映射。
+- 修复历史头像在聊天、联系人、资料页、群组、朋友圈、时间线、通知和通话界面无法显示的问题；头像现在与帖子媒体使用相同的旧文件地址迁移映射。
+- 前端包、个人信息页、iOS 主目标及 Share Extension 统一更新为 `2.5.2`（iOS build `48`）。
+- 已重新生成生产前端、同步 Capacitor iOS 工程，并通过 TypeScript/Vite 构建、`git diff --check` 和无签名 iOS Simulator 编译验证。
+
+---
+
 ## 2.5.1
 
 - Synchronized the iOS client with the upstream `2.5.1` frontend while preserving iOS-specific Keychain storage, encrypted local caches, Share Extension integration, APNS registration, local notifications, and badge synchronization.

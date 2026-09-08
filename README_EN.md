@@ -12,7 +12,7 @@
 
 The complete release history has moved to [changelog.md](changelog.md).
 
-Current version: **2.5.1** (iOS build 47). This release absorbs the upstream 2.5.1 cleanup and offline-cache behavior, removes Web Push, OneSignal, browser notification settings, and the Profile PWA installation guide, and retains native APNS, local notifications, home-screen badges, and secure storage on iOS.
+Current version: **2.5.2** (iOS build 48). This release absorbs upstream 2.5.2 support for server-local file storage, legacy R2 URL migration, and chat-attachment batch downloads while retaining native APNS, local notifications, home-screen badges, secure storage, and the iOS Share Extension.
 
 ---
 
@@ -35,7 +35,8 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 | 🧑‍🏫 Meeting Controls | Host mute-all, discussion/lecture modes, participant list, and speaking status |
 | 🎙️ Real-time Voice Changer | 3 modes (0.8x / 1.0x / 1.2x), powered by Web Audio API |
 | 👥 Group Chat | Up to 2000 members, encrypted & unencrypted modes |
-| 💬 Messaging | Text, images, videos, documents, voice messages, emoji panel, Telegram sticker packs |
+| 💬 Messaging | Text, images, videos, documents, voice messages, emoji, and Telegram stickers; batch-download up to 20 file messages at once |
+| 🗂️ File Storage | Supports server-local storage and legacy R2 URL migration; profile and social media are permanent while chat attachments use temporary storage |
 | 🔏 Message Privacy | Optional extra password and eight text appearances, with secure unlock prompting after login or automatic locking |
 | 🎨 Native-oriented UI | Platform system typography, content-first message surfaces, iPhone safe areas, and system accessibility preferences |
 | 📴 Offline Browsing | Caches contacts, groups, chat history, Moments, Timeline posts, and media, with one-tap cleanup |

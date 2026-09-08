@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { get, post, put, del, uploadFileWithProgress } from '../api/http'
+import { get, post, put, del, uploadFileWithProgress, normalizeFileUrl } from '../api/http'
 import { useI18n } from '../hooks/useI18n'
 import { useStore } from '../store'
 import { QRCodeCanvas } from '../components/QRCode'
@@ -80,7 +80,7 @@ export default function GroupInfo() {
     setUploading(true)
     setUploadProgress(0)
     try {
-      const res = await uploadFileWithProgress(file, (pct) => setUploadProgress(pct))
+      const res = await uploadFileWithProgress(file, (pct) => setUploadProgress(pct), 'permanent')
       await put(`/api/groups/${id}`, { avatar: res.url })
       setGroup((prev: any) => ({ ...prev, avatar: res.url }))
       // Also refresh groups in global store
@@ -261,7 +261,7 @@ export default function GroupInfo() {
                         {selected && <Check size={14} color="#fff" />}
                       </div>
                       <div className="avatar avatar-sm">
-                        {f.avatar ? <img src={f.avatar} alt="" /> : f.nickname?.[0]?.toUpperCase()}
+                        {f.avatar ? <img src={normalizeFileUrl(f.avatar)} alt="" /> : f.nickname?.[0]?.toUpperCase()}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 500 }}>{f.nickname}</div>
@@ -362,7 +362,7 @@ export default function GroupInfo() {
             }}
             onClick={() => isOwner && avatarRef.current?.click()}
           >
-            {group.avatar ? <img src={group.avatar} alt="" /> : <Users size={20} />}
+            {group.avatar ? <img src={normalizeFileUrl(group.avatar)} alt="" /> : <Users size={20} />}
             {isOwner && (
               <div style={{
                 position: 'absolute', bottom: -2, right: -2,
@@ -576,7 +576,7 @@ export default function GroupInfo() {
             <div key={m.id} className="list-item" onClick={() => navigate(`/user/${m.id}`)}
               style={{ cursor: 'pointer', borderRadius: 12, marginBottom: 4 }}>
               <div className="avatar avatar-sm">
-                {m.avatar ? <img src={m.avatar} alt="" /> : m.nickname?.[0]?.toUpperCase()}
+                {m.avatar ? <img src={normalizeFileUrl(m.avatar)} alt="" /> : m.nickname?.[0]?.toUpperCase()}
               </div>
               <div className="list-content" style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

@@ -206,7 +206,7 @@ export default function UserProfile() {
           borderRadius: 16, margin: '8px 12px',
         }}>
           <div className="avatar avatar-lg" style={{ marginBottom: 12 }}>
-            {user.avatar ? <img src={user.avatar} alt="" /> : user.nickname?.[0]?.toUpperCase()}
+            {user.avatar ? <img src={normalizeFileUrl(user.avatar)} alt="" /> : user.nickname?.[0]?.toUpperCase()}
           </div>
           <div style={{ fontSize: 20, fontWeight: 700 }}>{displayName}</div>
           {remark && (

@@ -3,6 +3,7 @@ import { CameraOff, ChevronLeft, LayoutGrid, Mic, MicOff, PhoneIncoming, PhoneOf
 import { formatDuration, useGroupCallContext } from '../contexts/GroupCallContext'
 import { useStore } from '../store'
 import { useI18n } from '../hooks/useI18n'
+import { normalizeFileUrl } from '../api/http'
 
 export default function GroupCallOverlay() {
   const gc = useGroupCallContext()
@@ -114,7 +115,7 @@ function PeoplePanel({ gc, participants }: { gc: ReturnType<typeof useGroupCallC
 
 function Avatar({ name, src, size }: { name?: string; src?: string; size: number }) {
   return <div style={{ width: size, height: size, flex: `0 0 ${size}px`, borderRadius: '50%', background: '#36506d', display: 'grid', placeItems: 'center', fontSize: size * .4, overflow: 'hidden' }}>
-    {src ? <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name?.[0] || '?')}
+    {src ? <img src={normalizeFileUrl(src)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name?.[0] || '?')}
   </div>
 }
 

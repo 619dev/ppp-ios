@@ -165,7 +165,7 @@ export default function Moments() {
             <div key={m.id} className={`moment-card${imgCount === 0 && (!m.videos || m.videos.length === 0) ? ' text-only' : ''}`}>
               <div className="moment-header">
                 <div className="avatar avatar-sm">
-                  {m.user?.avatar ? <img src={m.user.avatar} alt="" /> : m.user?.nickname?.[0]}
+                  {m.user?.avatar ? <img src={normalizeFileUrl(m.user.avatar)} alt="" /> : m.user?.nickname?.[0]}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div className="moment-user">{m.user?.nickname}</div>
@@ -243,7 +243,7 @@ export default function Moments() {
                       border: '1.5px solid var(--border)',
                     }}>
                       {l.avatar
-                        ? <img src={l.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ? <img src={normalizeFileUrl(l.avatar)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         : l.nickname?.[0]?.toUpperCase()
                       }
                     </div>
@@ -364,7 +364,7 @@ function MomentComposer({ t, friends, onBack, onPublished }: {
 
   // Upload file helper (uses shared upload with URL normalization)
   const uploadOneFile = async (file: File): Promise<string> => {
-    const res = await httpUploadFile(file)
+    const res = await httpUploadFile(file, 'permanent')
     return res.url
   }
 
@@ -548,7 +548,7 @@ function MomentComposer({ t, friends, onBack, onPublished }: {
                 return (
                   <div key={f.id} className="list-item" onClick={() => toggleFriend(f.id)} style={{ cursor: 'pointer' }}>
                     <div className="avatar avatar-sm">
-                      {f.avatar ? <img src={f.avatar} alt="" /> : f.nickname[0]?.toUpperCase()}
+                      {f.avatar ? <img src={normalizeFileUrl(f.avatar)} alt="" /> : f.nickname[0]?.toUpperCase()}
                     </div>
                     <div className="list-content">
                       <div className="name">{f.nickname}</div>

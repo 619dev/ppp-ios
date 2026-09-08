@@ -7,6 +7,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useNotificationStore } from '../store/notificationStore'
 import { MessageCircle, Phone, X } from 'lucide-react'
+import { normalizeFileUrl } from '../api/http'
 
 export default function NotificationToast() {
   const toasts = useNotificationStore((s) => s.toasts)
@@ -77,7 +78,7 @@ export default function NotificationToast() {
             overflow: 'hidden',
           }}>
             {toast.avatar ? (
-              <img src={toast.avatar} alt="" style={{
+              <img src={normalizeFileUrl(toast.avatar)} alt="" style={{
                 width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover',
               }} />
             ) : toast.type === 'call' ? (

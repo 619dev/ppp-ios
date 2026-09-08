@@ -5,7 +5,7 @@ import { useI18n } from '../hooks/useI18n'
 import { clearKeys, getKeys, lockKeysInMemory } from '../crypto/keystore'
 import { clearAllSenderKeys } from '../crypto/groupCrypto'
 import { disconnectWs } from '../api/socket'
-import { get, post, put, del, uploadFile } from '../api/http'
+import { get, post, put, del, uploadFile, normalizeFileUrl } from '../api/http'
 import { allLangs, langNames, LangCode } from '../i18n'
 import { QRCodeCanvas } from '../components/QRCode'
 import { Camera, ChevronLeft, ChevronRight, Smartphone, Check, Copy, KeyRound, Shield, Fingerprint, Moon, Globe, Monitor, CheckCircle, FileText, ExternalLink, Wifi, Trash2, AlertTriangle } from 'lucide-react'
@@ -14,7 +14,7 @@ import { PRESENTATION_CODECS, type PresentationCodecId } from '../crypto/present
 import { disablePresentationCrypto, enablePresentationCrypto, getPresentationSettings, isPresentationUnlocked, lockPresentationCrypto, unlockPresentationCrypto, updatePresentationSettings } from '../crypto/presentationCrypto'
 
 type SubView = null | 'password' | 'avatar' | '2fa' | 'sessions' | 'language' | 'fingerprint' | 'myqr' | 'proxy' | 'message-privacy'
-const APP_VERSION = '2.5.1'
+const APP_VERSION = '2.5.2'
 
 export default function Profile() {
   const { t } = useI18n()
@@ -107,7 +107,7 @@ export default function Profile() {
         {/* User card */}
         <div className="list-item" style={{ padding: '20px 16px' }}>
           <div className="avatar avatar-lg">
-            {user?.avatar ? <img src={user.avatar} alt="" /> : user?.nickname?.[0]?.toUpperCase()}
+            {user?.avatar ? <img src={normalizeFileUrl(user.avatar)} alt="" /> : user?.nickname?.[0]?.toUpperCase()}
           </div>
           <div className="list-content">
             <div className="name" style={{ fontSize: 18 }}>{user?.nickname}</div>
@@ -405,7 +405,7 @@ function ChangeAvatar({ onBack, t, user, setAuth }: { onBack: () => void; t: (k:
     setUploading(true)
     try {
       // Upload file
-      const res = await uploadFile(file)
+      const res = await uploadFile(file, 'permanent')
       // Update avatar
       await put('/api/users/avatar', { avatar: res.url })
       setPreview(res.url)
@@ -878,7 +878,7 @@ function MyQRCode({ onBack, t, user }: { onBack: () => void; t: (k: string) => s
         padding: 32, gap: 20,
       }}>
         <div className="avatar" style={{ width: 80, height: 80, fontSize: 36, borderRadius: 40 }}>
-          {user?.avatar ? <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: 40, objectFit: 'cover' }} /> : user?.nickname?.[0]?.toUpperCase()}
+          {user?.avatar ? <img src={normalizeFileUrl(user.avatar)} alt="" style={{ width: '100%', height: '100%', borderRadius: 40, objectFit: 'cover' }} /> : user?.nickname?.[0]?.toUpperCase()}
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 20, fontWeight: 700 }}>{user?.nickname}</div>

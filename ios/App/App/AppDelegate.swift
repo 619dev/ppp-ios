@@ -10,6 +10,129 @@ public class PaperPhoneBridgeViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(SecureStoragePlugin())
         bridge?.registerPluginInstance(KeepAwakePlugin())
         bridge?.registerPluginInstance(SharedFilePlugin())
+        bridge?.registerPluginInstance(FileExporterPlugin())
+    }
+}
+
+@objc(FileExporter)
+public class FileExporterPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate {
+    public let identifier = "FileExporter"
+    public let jsName = "FileExporter"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "exportFiles", returnType: CAPPluginReturnPromise)
+    ]
+
+    private var pendingCall: CAPPluginCall?
+    private var temporaryDirectory: URL?
+    private var failedDownloads = 0
+
+    @objc func exportFiles(_ call: CAPPluginCall) {
+        guard pendingCall == nil else {
+            call.reject("Another file export is already active")
+            return
+        }
+        guard let files = call.getArray("files", JSObject.self), !files.isEmpty else {
+            call.reject("No files to export")
+            return
+        }
+
+        let authorization = call.getString("authorization")
+        call.keepAlive = true
+        pendingCall = call
+
+        Task {
+            do {
+                let result = try await download(files: files, authorization: authorization)
+                await MainActor.run {
+                    self.failedDownloads = result.failed
+                    guard !result.urls.isEmpty else {
+                        self.finish(rejecting: "All selected files failed to download")
+                        return
+                    }
+                    let picker = UIDocumentPickerViewController(forExporting: result.urls, asCopy: true)
+                    picker.delegate = self
+                    picker.allowsMultipleSelection = true
+                    self.bridge?.viewController?.present(picker, animated: true)
+                }
+            } catch {
+                await MainActor.run { self.finish(rejecting: "Unable to prepare files", error: error) }
+            }
+        }
+    }
+
+    private func download(files: [JSObject], authorization: String?) async throws -> (urls: [URL], failed: Int) {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PaperPhoneExport-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        temporaryDirectory = directory
+
+        var urls: [URL] = []
+        var failed = 0
+        var usedNames = Set<String>()
+        for (index, file) in files.enumerated() {
+            guard let sourceString = file["url"] as? String,
+                  let sourceURL = URL(string: sourceString) else {
+                failed += 1
+                continue
+            }
+            var request = URLRequest(url: sourceURL)
+            if let authorization, !authorization.isEmpty {
+                request.setValue(authorization, forHTTPHeaderField: "Authorization")
+            }
+            do {
+                let (downloadedURL, response) = try await URLSession.shared.download(for: request)
+                guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                    throw URLError(.badServerResponse)
+                }
+                let requestedName = (file["fileName"] as? String) ?? sourceURL.lastPathComponent
+                let name = uniqueFileName(sanitize(requestedName, fallback: "file_\(index + 1)"), used: &usedNames)
+                let destination = directory.appendingPathComponent(name, isDirectory: false)
+                try FileManager.default.moveItem(at: downloadedURL, to: destination)
+                urls.append(destination)
+            } catch {
+                failed += 1
+            }
+        }
+        return (urls, failed)
+    }
+
+    private func sanitize(_ name: String, fallback: String) -> String {
+        let invalid = CharacterSet(charactersIn: "/\\:*?\"<>|").union(.controlCharacters)
+        let cleaned = name.components(separatedBy: invalid).joined(separator: "_")
+        return cleaned.isEmpty || cleaned == "." || cleaned == ".." ? fallback : cleaned
+    }
+
+    private func uniqueFileName(_ name: String, used: inout Set<String>) -> String {
+        if used.insert(name).inserted { return name }
+        let nsName = name as NSString
+        let stem = nsName.deletingPathExtension
+        let ext = nsName.pathExtension
+        var suffix = 2
+        while true {
+            let candidate = ext.isEmpty ? "\(stem)_\(suffix)" : "\(stem)_\(suffix).\(ext)"
+            if used.insert(candidate).inserted { return candidate }
+            suffix += 1
+        }
+    }
+
+    public func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        let saved = max(0, urls.count)
+        finish(result: ["saved": saved, "failed": failedDownloads, "cancelled": false])
+    }
+
+    public func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        finish(result: ["saved": 0, "failed": failedDownloads, "cancelled": true])
+    }
+
+    private func finish(result: JSObject? = nil, rejecting message: String? = nil, error: Error? = nil) {
+        if let directory = temporaryDirectory { try? FileManager.default.removeItem(at: directory) }
+        temporaryDirectory = nil
+        failedDownloads = 0
+        guard let call = pendingCall else { return }
+        pendingCall = nil
+        call.keepAlive = false
+        if let message { call.reject(message, nil, error) }
+        else { call.resolve(result ?? [:]) }
     }
 }
 

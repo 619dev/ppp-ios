@@ -25,6 +25,7 @@ import GroupCallOverlay from './components/GroupCallOverlay'
 import NotificationToast from './components/NotificationToast'
 import { CallProvider } from './contexts/CallContext'
 import { GroupCallProvider } from './contexts/GroupCallContext'
+import { initializeLegacyFileMapping } from './api/http'
 import { isNativePlatform } from './utils/platform'
 import { initNativePush } from './api/nativePush'
 import { initLocalNotifications } from './api/localNotification'
@@ -45,6 +46,11 @@ function ProtectedLayout() {
   useEffect(() => {
     setAppBadgeCount(totalUnread)
   }, [totalUnread])
+  const [, setFileMappingRevision] = useState(0)
+
+  useEffect(() => {
+    initializeLegacyFileMapping().finally(() => setFileMappingRevision(v => v + 1))
+  }, [])
 
   // Auto-subscribe to push notifications when authenticated
   useEffect(() => {
