@@ -4,6 +4,21 @@ All notable changes and new features are recorded here. Historical entries below
 
 所有重要版本改动和新特性统一记录于此。下方历史条目由仓库原有文档迁移而来。
 
+## 2.6.0
+
+- 个人信息页底部版本号为 `PaperPhonePlus v2.6.0`；更新中英文说明及 iOS 测试文档，修正群加密、身份验证、后量子协议范围和测试路径说明。
+
+- 同步上游 `bc1d6e0`（2.6.0）：私聊/群聊签名、联系人双向身份验证及密钥变更提示、群密钥验证和历史轮换恢复。
+- 身份验证信任记录使用 iOS Keychain，保留 APNS、本地通知、角标、系统文件导出和分享扩展。
+- 离线同步等待原生加密缓存持久化后再推进游标；缓存不保存正文或签名验证结果，写入按顺序执行。
+- 同步八种语言的安全提示和附件鉴权/头像规范化修复。
+- 主应用及分享扩展版本更新为 2.6.0，build 49。需配套 2.6.0 服务端。
+- 已通过前端构建、安全/同步/多语言/附件回归测试、Capacitor 同步和带本地签名的 iOS Simulator Debug 构建；尚未进行真机联调。
+- Absorbs upstream signed messaging, mutual identity verification, authenticated group key distribution, epoch history recovery, localization, and attachment fixes while retaining native iOS integrations.
+- Stores identity trust records in Keychain and awaits serialized encrypted cache persistence before advancing sync cursors; cached verification flags are discarded.
+
+---
+
 ## 2.5.2
 
 - Synchronized the iOS client with the upstream `2.5.2` frontend while preserving iOS-specific Keychain storage, encrypted local caches, Share Extension integration, APNS registration, local notifications, and badge synchronization.

@@ -1,4 +1,5 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
+import { serverAttachmentUrl } from './http'
 
 export interface ExportableFile {
   url: string
@@ -26,7 +27,7 @@ export async function exportFilesNatively(files: ExportableFile[]): Promise<{
 }> {
   const token = localStorage.getItem('token')
   return FileExporter.exportFiles({
-    files,
+    files: files.map(file => ({ ...file, url: serverAttachmentUrl(file.url) })),
     authorization: token ? `Bearer ${token}` : undefined,
   })
 }

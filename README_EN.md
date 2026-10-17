@@ -12,7 +12,7 @@
 
 The complete release history has moved to [changelog.md](changelog.md).
 
-Current version: **2.5.2** (iOS build 48). This release absorbs upstream 2.5.2 support for server-local file storage, legacy R2 URL migration, and chat-attachment batch downloads while retaining native APNS, local notifications, home-screen badges, secure storage, and the iOS Share Extension.
+Current version: **2.6.0** (iOS build 49). Absorbs upstream `bc1d6e0` with signed private/group messages, contact identity verification, group key rotation/history recovery, and offline sync and attachment authorization fixes. Identity trust records use iOS Keychain; native notifications, encrypted caches, and Share Extension remain supported. The signed messaging and group key protocols require the matching 2.6.0 server.
 
 ---
 
@@ -29,12 +29,12 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 | Feature | Description |
 |---------|-------------|
 | 🔐 End-to-End Encryption | Stateless ECDH + XSalsa20-Poly1305, per-message ephemeral keys, forward secrecy |
-| 🛡️ Post-Quantum Encryption | Integrated CRYSTALS-Kyber post-quantum key encapsulation |
+| ✅ Identity Verification and Signatures | Ed25519-signed private/group messages; mutual verification using the shared text appearance password, with trust revoked on key changes |
 | 🗝️ Secure Local Keys | Identity and group Sender Keys are held in the iOS Keychain; chat caches use a device-bound AES-256-GCM key |
 | 📹 Video/Voice Calls | LiveKit SFU-based private and group voice/video calls |
 | 🧑‍🏫 Meeting Controls | Host mute-all, discussion/lecture modes, participant list, and speaking status |
 | 🎙️ Real-time Voice Changer | 3 modes (0.8x / 1.0x / 1.2x), powered by Web Audio API |
-| 👥 Group Chat | Up to 2000 members, encrypted & unencrypted modes |
+| 👥 Group Chat | Up to 2000 members; new messages require signatures and Sender Key encryption, with epoch rotation on membership changes |
 | 💬 Messaging | Text, images, videos, documents, voice messages, emoji, and Telegram stickers; batch-download up to 20 file messages at once |
 | 🗂️ File Storage | Supports server-local storage and legacy R2 URL migration; profile and social media are permanent while chat attachments use temporary storage |
 | 🔏 Message Privacy | Optional extra password and eight text appearances, with secure unlock prompting after login or automatic locking |
@@ -53,7 +53,7 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 
 ## 🔐 Extra-encrypted text appearance: design and security boundary
 
-This feature is **extra insurance on top of the existing end-to-end encryption (E2EE)**. It does not replace E2EE with a visual encoding, and it never bypasses or weakens the original encryption. Private chats remain protected by the existing X25519 / ML-KEM-768 key agreement and message-encryption path; group chats continue to use the Sender Key protocol. Identity private keys and group Sender Keys remain protected by iOS Keychain.
+This feature is **extra insurance on top of the existing end-to-end encryption (E2EE)**. It does not replace E2EE with a visual encoding, and it never bypasses or weakens the original encryption. Signed private messages in 2.6.0 use X25519 key agreement and XSalsa20-Poly1305 encryption; groups use authenticated Sender Keys. Both paths bind Ed25519 message signatures. Identity private keys and group Sender Keys remain protected by iOS Keychain.
 
 When enabled, every message is processed in this order:
 
@@ -68,6 +68,15 @@ The app does not persist the extra password. While unlocked it exists only in th
 
 After sign-in and local secure-state restoration, the app displays an extra-password dialog whenever Message privacy is enabled but the current process is still locked. A correct password restores plaintext display; an incorrect password preserves the locked state and shows an error; users may also cancel and continue browsing appearance ciphertext. The dialog returns after an immediate lock or once the configured background auto-lock interval expires.
 
+## 2.6.0 verification and upgrade
+
+- The Profile footer displays `PaperPhonePlus v2.6.0`; both the app and Share Extension use 2.6.0 (build 49).
+- Upgrade the server and all participating clients together. Contacts set and unlock the same text appearance password and complete a private challenge/receipt handshake. Green badges reflect local verification; changed identity/signing keys require offline confirmation and re-verification.
+- Establish group members' identities through private verification first. Group signatures bind the group, sender, epoch and ciphertext. Missing historical keys leave ciphertext pending recovery; previously lost keys cannot be recreated.
+- Keychain holds trust records, identity private keys and group keys. Device-key-encrypted offline caches are persisted before sync cursors advance, and signatures are rechecked after restart.
+- The registration API's `kem_pub` contains an Ed25519 signing key. The signed path does not provide ML-KEM post-quantum key agreement. Message signatures do not end-to-end encrypt uploaded attachment bytes.
+- See [test instructions](tests/README.md) for regression commands and manual acceptance, and [the changelog](changelog.md) for preserved release history.
+
 ## Tech Stack
 
 ```
@@ -75,7 +84,7 @@ Frontend
   React 19 + TypeScript 5.7 + Vite 6
   Zustand — State management
   libsodium-wrappers-sumo — Curve25519 / XSalsa20-Poly1305 (WebAssembly)
-  crystals-kyber-js — Post-quantum key encapsulation
+  crystals-kyber-js — Retained library (the 2.6.0 signed protocol does not use ML-KEM)
   LiveKit Client — SFU-based private and group voice/video calls
   Web Audio API — Real-time voice modulation
   jsQR — QR decoding fallback for iOS WKWebView

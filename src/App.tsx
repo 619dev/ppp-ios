@@ -123,6 +123,9 @@ export default function App() {
   // from Keychain and the authenticated local cache has been opened.
   useEffect(() => {
     let cancelled = false
+    setShowPresentationUnlock(false)
+    setPresentationPassword('')
+    setPresentationUnlockError('')
     if (!token || !user?.id) {
       setHydratedAccount(null)
       setSecureHydrationError(null)
@@ -274,7 +277,7 @@ export default function App() {
               : null
         ) : <Navigate to="/login" replace />} />
       </Routes>
-      {showPresentationUnlock && (
+      {token && user?.id && hydratedAccount === user.id && showPresentationUnlock && (
         <div className="modal-overlay" role="presentation">
           <form className="modal" role="dialog" aria-modal="true" aria-labelledby="presentation-startup-title" onSubmit={unlockPresentationAtStartup}>
             <h2 id="presentation-startup-title" style={{ fontSize: 17, fontWeight: 600, marginBottom: 16 }}>
