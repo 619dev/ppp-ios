@@ -13,9 +13,13 @@ All notable changes and new features are recorded here. Historical entries below
 - 离线同步等待原生加密缓存持久化后再推进游标；缓存不保存正文或签名验证结果，写入按顺序执行。
 - 同步八种语言的安全提示和附件鉴权/头像规范化修复。
 - 主应用及分享扩展版本更新为 2.6.0，build 49。需配套 2.6.0 服务端。
-- 已通过前端构建、安全/同步/多语言/附件回归测试、Capacitor 同步和带本地签名的 iOS Simulator Debug 构建；尚未进行真机联调。
+- 已通过前端构建、安全/同步/多语言/附件回归测试、Capacitor 同步和使用 `CODE_SIGNING_ALLOWED=YES` 的 iOS Simulator Debug 构建；用户已确认手工测试通过。
+- 2026-10-17 已完成 Release 正式归档、IPA 导出并成功上传 App Store Connect（2.6.0 / 49）；上传结束时等待 Apple 处理。
+- 清理失效的云部署模板入口，更新中英文部署链接、构建缓存及签名要求、测试和上传状态。
 - Absorbs upstream signed messaging, mutual identity verification, authenticated group key distribution, epoch history recovery, localization, and attachment fixes while retaining native iOS integrations.
 - Stores identity trust records in Keychain and awaits serialized encrypted cache persistence before advancing sync cursors; cached verification flags are discarded.
+- Clean signed Simulator builds and manual testing passed; the Release archive and IPA were uploaded to App Store Connect on 2026-10-17 (2.6.0 / 49), pending Apple processing at upload completion.
+- Removed obsolete deployment-template links and refreshed upstream deployment references, signing/cache instructions and release status.
 
 ---
 

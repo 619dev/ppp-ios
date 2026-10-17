@@ -11,7 +11,7 @@ npm run build
 npx cap sync ios
 ```
 
-The iOS Simulator build command is in the [main README](../README_EN.md#6-command-line-simulator-build). Keep local signing enabled for Keychain access. These checks have passed locally; real-device and two-client acceptance remain manual.
+The iOS Simulator build command is in the [main README](../README_EN.md#6-build-for-the-simulator-from-the-command-line). Use `CODE_SIGNING_ALLOWED=YES` and keep local signing enabled for Keychain access. Clean compilation caches before a clean-build check, while preserving simulator data and Keychain. Automated checks and the signed Simulator build passed on 2026-10-17, and the user confirmed manual testing passed. Detailed real-device and two-client coverage was not recorded.
 
 ## Cryptographic and synchronization coverage
 
@@ -129,6 +129,6 @@ of protocol constants and user-supplied text.
 
 Use two compatible native clients to verify password setup/unlock, both directions of the handshake, profile refresh, focus/visibility refresh and changed-key rejection. Reopen profiles while verification is pending to confirm that challenges survive and retries are throttled. Open the group member list to check refreshed trust, then exercise leave/kick, offline reconnect and pending-key recovery. Check all eight languages, especially interpolated errors, verification prompts and the green badge's meaning.
 
-This local iOS source is version 2.6.0 (build 49); this update does not publish an App Store release. Tests of this shared source do not validate published native clients or Docker images. Local caches retain at most 2,000 messages per conversation; server-side auto-delete and attachment retention remain applicable. Message signing does not end-to-end encrypt uploaded file bytes, and no upgrade can recreate previously lost keys.
+Version 2.6.0 (build 49) was archived, exported and successfully uploaded to App Store Connect on 2026-10-17; Apple processing was pending at upload completion. Upload success does not establish App Store approval or availability. Tests of this shared source do not validate published native clients or Docker images. Local caches retain at most 2,000 messages per conversation; server-side auto-delete and attachment retention remain applicable. Message signing does not end-to-end encrypt uploaded file bytes, and no upgrade can recreate previously lost keys.
 
 See the [main README](../README_EN.md) and [中文说明](../README.md) for operating requirements. The client suites use cryptographic implementations with mocked transport/persistence; upstream server fixtures use real database/routes with transport signature fixtures. They provide regression coverage, not an independent audit or a native-device UI test.

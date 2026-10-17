@@ -209,12 +209,23 @@ xcodebuild \
   -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,id=<SIMULATOR_UDID>' \
   -derivedDataPath /tmp/ppp-ios-simulator-signed \
+  CODE_SIGNING_ALLOWED=YES \
   ONLY_ACTIVE_ARCH=YES \
   ARCHS=arm64 \
   build
 ```
 
 覆盖安装可保留模拟器中的登录状态和 Keychain；只有明确需要清除账号与本地数据时才应先卸载应用。
+
+---
+
+## 2.6.0 构建与上传状态
+
+2026-10-17 已完成清缓存后的前端构建、安全/同步/多语言/附件回归测试及带签名的模拟器构建，手工测试通过。正式 Release 归档及 IPA 已生成，2.6.0（49）已成功上传 App Store Connect；上传完成时 Apple 正在处理，后续 TestFlight 可用性及 App Store 审核状态以控制台为准。
+
+构建缓存可清理 `dist/`、`node_modules/.vite/`、`build/`、`ios/App/build/`、`tsconfig.tsbuildinfo` 及本次使用的 DerivedData 目录。不要清除模拟器数据或 Keychain 来代替清理编译缓存。
+
+正式产物存放于 `release/2.6.0/`，包括 `PaperPhonePlus-2.6.0.xcarchive`、`PaperPhonePlus-2.6.0.ipa` 和导出/上传配置；这些本地产物不提交到 Git。正式打包使用 Release、`generic/platform=iOS` 和 `CODE_SIGNING_ALLOWED=YES`；先导出并核对主应用及分享扩展版本，再使用上传配置提交至 App Store Connect。签名证书、描述文件及 Apple 账号授权需在本机配置。
 
 ---
 
@@ -271,10 +282,9 @@ APNS_RELAY_KEY=EzmpqftbsENaRUO6BTABxLV96q7RuEDyokXJr1DWdDjL54cLg7yXVUQqydCQvxrX
 
 本项目是 [619dev/PaperPhonePlus](https://github.com/619dev/Paperphone-plus) 的 iOS 客户端分支。上游项目包含完整的后端（Rust/Axum）和前端源码。
 
-如需部署完整系统（含后端服务器），请参阅上游项目文档：
-- 🚀 [Zeabur 一键云部署](https://zeabur.com/templates/SK6T93?referralCode=619dev)
-- 🐳 Docker Compose 一键部署
-- 📡 视频通话 TURN 配置
+本仓库仅维护 iOS 客户端，不包含后端部署模板。部署配套服务端时，请使用上游当前文档：
+- 🐳 [服务端部署与迁移说明](https://github.com/619dev/Paperphone-plus/blob/main/DEPLOY_CN.md)（Docker Compose 等方式）
+- 📡 [LiveKit 群会议及通话部署](https://github.com/619dev/Paperphone-plus/blob/main/MEETING_DEPLOYMENT.md)
 - 🔔 原生推送通知（iOS APNS / Android FCM 与 ntfy）
 
 ---

@@ -209,12 +209,23 @@ xcodebuild \
   -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,id=<SIMULATOR_UDID>' \
   -derivedDataPath /tmp/ppp-ios-simulator-signed \
+  CODE_SIGNING_ALLOWED=YES \
   ONLY_ACTIVE_ARCH=YES \
   ARCHS=arm64 \
   build
 ```
 
 Installing over the existing simulator app preserves its login state and Keychain. Uninstall first only when account and local data should intentionally be erased.
+
+---
+
+## 2.6.0 build and upload status
+
+On 2026-10-17, a clean frontend build, security/sync/localization/attachment regressions and a signed Simulator build passed, followed by successful manual testing. The Release archive and IPA were generated, and 2.6.0 (49) was successfully uploaded to App Store Connect. Apple was processing the package at upload completion; consult the console for subsequent TestFlight availability and App Store review status.
+
+Build caches include `dist/`, `node_modules/.vite/`, `build/`, `ios/App/build/`, `tsconfig.tsbuildinfo` and the DerivedData directory selected for the build. Preserve simulator data and Keychain when clearing compilation caches.
+
+Local outputs are in `release/2.6.0/`: `PaperPhonePlus-2.6.0.xcarchive`, `PaperPhonePlus-2.6.0.ipa` and export/upload configuration. These local artifacts are not committed to Git. Distribution builds use Release, `generic/platform=iOS` and `CODE_SIGNING_ALLOWED=YES`. Export and verify both app and Share Extension versions before using the upload configuration for App Store Connect. Signing certificates, provisioning profiles and Apple account authorization must be configured locally.
 
 ---
 
@@ -271,10 +282,9 @@ Ordinary network loss, WebSocket reconnection, proxy changes, IP changes, or a s
 
 This project is the iOS client fork of [619dev/PaperPhonePlus](https://github.com/619dev/Paperphone-plus). The upstream project contains the full backend (Rust/Axum) and frontend source code.
 
-For full system deployment (including backend server), please refer to the upstream documentation:
-- 🚀 [Zeabur One-click Deployment](https://zeabur.com/templates/SK6T93?referralCode=619dev)
-- 🐳 Docker Compose deployment
-- 📡 Video call TURN configuration
+This repository maintains only the iOS client and does not include backend deployment templates. Use the current upstream documentation for the matching server:
+- 🐳 [Server deployment and migration](https://github.com/619dev/Paperphone-plus/blob/main/DEPLOY_EN.md) (including Docker Compose)
+- 📡 [LiveKit meetings and call deployment](https://github.com/619dev/Paperphone-plus/blob/main/MEETING_DEPLOYMENT.md)
 - 🔔 Native push notifications (iOS APNS / Android FCM and ntfy)
 
 ---
