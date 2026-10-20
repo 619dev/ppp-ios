@@ -151,6 +151,106 @@ body {
   position: relative;
 }
 
+/* The WebView paints edge to edge; apply native safe areas once to the shell.
+   Every screen and fixed overlay shares that coordinate space when folding. */
+html[data-platform="ios"],
+html[data-platform="ios"] body,
+html[data-platform="ios"] #root {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+html[data-platform="ios"] #root {
+  max-width: none;
+  border: 0;
+  box-shadow: none;
+  padding: var(--native-safe-top, env(safe-area-inset-top, 0px))
+    var(--native-safe-right, env(safe-area-inset-right, 0px))
+    var(--native-safe-bottom, env(safe-area-inset-bottom, 0px))
+    var(--native-safe-left, env(safe-area-inset-left, 0px));
+}
+
+#app-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  /* Fixed dialogs and menus share the content shell's coordinates. */
+  transform: translateZ(0);
+  container-type: inline-size;
+}
+
+html[data-platform="ios"] #app-shell {
+  --safe-top: 0px;
+  --safe-right: 0px;
+  --safe-bottom: 0px;
+  --safe-left: 0px;
+}
+
+html[data-platform="ios"] #root:has(.login-page) {
+  background: linear-gradient(160deg, #f5f0e8 0%, #ede4d4 30%, #d4c5a9 70%, #c7b898 100%);
+}
+
+html[data-platform="ios"][data-theme="dark"] #root:has(.login-page) {
+  background: linear-gradient(160deg, #0a0a14 0%, #141428 50%, #1e1e3c 100%);
+}
+
+html[data-platform="ios"] .login-page {
+  background: transparent;
+}
+
+.adaptive-workspace {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-main,
+.workspace-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-main { flex: 1; }
+.workspace-main > .page,
+.workspace-sidebar > .page { flex: 1; }
+
+/* Use available content bounds, not a model name or device orientation.
+   The sidebar remains beside the same routed detail during a fold/resize. */
+.workspace-sidebar {
+  flex: 0 0 clamp(280px, 38%, 360px);
+  border-right: 0.5px solid var(--separator);
+  background: var(--bg-secondary);
+}
+
+.workspace-welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+  background: radial-gradient(ellipse at center, var(--accent-bg), transparent 70%);
+}
+
+.workspace-welcome-mark {
+  font-size: clamp(22px, 3vw, 36px);
+  font-weight: 700;
+  color: var(--accent);
+}
+
 @media (min-width: 481px) {
   #root {
     border-left: 0.5px solid var(--glass-border);
@@ -208,6 +308,8 @@ body {
 .page {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   height: 100%;
   overflow: hidden;
 }
@@ -248,6 +350,7 @@ body {
 
 .page-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -617,6 +720,7 @@ textarea.input {
    ═══════════════════════════════════════════════════════════════ */
 .chat-input-bar {
   display: flex;
+  flex-shrink: 0;
   align-items: flex-end;
   gap: 6px;
   padding: 8px 12px;
@@ -729,7 +833,7 @@ textarea.input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 24px;
   background: linear-gradient(160deg,
     #f5f0e8 0%,
@@ -737,7 +841,9 @@ textarea.input {
     #d4c5a9 70%,
     #c7b898 100%);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 /* Ambient light orbs */
@@ -784,10 +890,27 @@ textarea.input {
 .login-card {
   width: 100%;
   max-width: 380px;
+  flex-shrink: 0;
+  margin-block: auto;
   padding: 36px 28px;
   border-radius: var(--radius-xl);
   position: relative;
   z-index: 1;
+}
+
+.login-brand, .login-fields { min-width: 0; }
+
+@container (min-width: 760px) {
+  .login-card--primary {
+    max-width: 960px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(24px, 4cqw, 48px);
+    padding: 28px;
+  }
+  .login-brand { align-self: center; }
+  .login-fields { align-self: center; }
+  .login-brand .security-badges { margin-bottom: 0; }
 }
 
 .login-logo {
@@ -1318,7 +1441,8 @@ textarea.input {
   padding: 24px;
   animation: modal-spring 0.4s var(--ease-spring);
   position: relative;
-  overflow: hidden;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 @keyframes fade-in {

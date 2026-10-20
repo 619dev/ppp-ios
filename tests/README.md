@@ -1,6 +1,8 @@
 # Security and localization tests
 
-Version: **2.6.0**, iOS build **49**. Run from the `ppp-ios` repository root:
+Version: **2.6.1**, iOS build **50**. Run from the `ppp-ios` repository root:
+
+2.6.1 includes iPhone Duo / iOS 27.1 support for folded, partially open and fully open layouts, Mac-inspired wide-screen conversation panes, iPhone 17 family layouts, and full-display backgrounds without white safe-area bands. The deployment target remains iOS 16; build with Xcode 27.1 or newer. Detailed layout contracts and honest per-device coverage are in [iPhone compatibility](ios-device-compatibility.md).
 
 ```bash
 npm ci
@@ -12,6 +14,8 @@ npx cap sync ios
 ```
 
 The iOS Simulator build command is in the [main README](../README_EN.md#6-build-for-the-simulator-from-the-command-line). Use `CODE_SIGNING_ALLOWED=YES` and keep local signing enabled for Keychain access. Clean compilation caches before a clean-build check, while preserving simulator data and Keychain. Automated checks and the signed Simulator build passed on 2026-10-17, and the user confirmed manual testing passed. Detailed real-device and two-client coverage was not recorded.
+
+On 2026-10-20, 2.6.1 (50) passed a clean frontend build, Capacitor sync, signature verification and a clean signed Simulator build targeting iPhone 17 Pro Max / iOS 27.0. The app launched into an existing signed-in session. Duo / iOS 27.1 login screenshots were inspected folded, partially open and fully open; this does not establish signed-in split-pane, keyboard, camera, microphone or APNs acceptance on every device.
 
 ## Cryptographic and synchronization coverage
 

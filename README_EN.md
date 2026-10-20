@@ -12,7 +12,14 @@
 
 The complete release history has moved to [changelog.md](changelog.md).
 
-Current version: **2.6.0** (iOS build 49). Absorbs upstream `bc1d6e0` with signed private/group messages, contact identity verification, group key rotation/history recovery, and offline sync and attachment authorization fixes. Identity trust records use iOS Keychain; native notifications, encrypted caches, and Share Extension remain supported. The signed messaging and group key protocols require the matching 2.6.0 server.
+Current version: **2.6.1** (iOS build 50). Adds **iPhone Duo / iOS 27.1** layouts for folded, partially open and fully open displays, updates iPhone 17 family layouts on iOS 27, removes white safe-area bands, and adopts the scene lifecycle required by iOS 27. Messaging, identity verification and group-key protocols remain compatible with the 2.6.0 server.
+
+### iPhone Duo and iPhone 17 family support
+
+- Backgrounds fill the display while one content shell avoids native safe areas, camera/system rails and the keyboard, preventing duplicated inset padding and white bands.
+- Duo uses a single column when folded and adapts to available bounds when partially or fully open. Wide login screens use two columns; the authenticated workspace uses a Mac-inspired conversation sidebar and detail pane.
+- Adaptive layouts cover iPhone 17, 17 Pro, 17 Pro Max, 17e and Air, including rotation, dialogs, context menus and video framing.
+- Login layouts were visually checked in all three Duo / iOS 27.1 states. A clean, locally signed 2.6.1 build launched and restored an existing account on iPhone 17 Pro Max / iOS 27.0. This is not full functional acceptance across all five models; Apple offers no 27.0.1 simulator, so that patch still needs a physical-device check. See the [device compatibility and acceptance record](tests/ios-device-compatibility.md).
 
 ---
 
@@ -68,9 +75,9 @@ The app does not persist the extra password. While unlocked it exists only in th
 
 After sign-in and local secure-state restoration, the app displays an extra-password dialog whenever Message privacy is enabled but the current process is still locked. A correct password restores plaintext display; an incorrect password preserves the locked state and shows an error; users may also cancel and continue browsing appearance ciphertext. The dialog returns after an immediate lock or once the configured background auto-lock interval expires.
 
-## 2.6.0 verification and upgrade
+## Verification and upgrade (2.6.0 protocol)
 
-- The Profile footer displays `PaperPhonePlus v2.6.0`; both the app and Share Extension use 2.6.0 (build 49).
+- The Profile footer displays `PaperPhonePlus v2.6.1`; both the app and Share Extension use 2.6.1 (build 50).
 - Upgrade the server and all participating clients together. Contacts set and unlock the same text appearance password and complete a private challenge/receipt handshake. Green badges reflect local verification; changed identity/signing keys require offline confirmation and re-verification.
 - Establish group members' identities through private verification first. Group signatures bind the group, sender, epoch and ciphertext. Missing historical keys leave ciphertext pending recovery; previously lost keys cannot be recreated.
 - Keychain holds trust records, identity private keys and group keys. Device-key-encrypted offline caches are persisted before sync cursors advance, and signatures are rechecked after restart.
@@ -149,7 +156,7 @@ ppp-ios/
 
 - **Node.js** ≥ 18
 - **npm** ≥ 9
-- **Xcode** ≥ 15 (with iOS 17+ SDK)
+- **Xcode** ≥ 27.1 (with the iOS 27.1 SDK for iPhone Duo; the deployment target remains iOS 16)
 - **Swift Package Manager** (Capacitor-managed iOS native dependencies)
 - macOS (required for iOS development)
 
@@ -219,7 +226,13 @@ Installing over the existing simulator app preserves its login state and Keychai
 
 ---
 
-## 2.6.0 build and upload status
+## 2.6.1 build and upload status
+
+On 2026-10-20, a clean frontend build, Capacitor sync and locally signed Pro Max / iOS 27.0 Simulator build passed. The app launched and preserved existing account data and Keychain. Security, sync, attachment and eight-language regressions passed. Login layout checks covered all three Duo fold states; hardware and complete two-client acceptance boundaries are documented in the test notes.
+
+The signed 2.6.1 (50) archive and App Store Connect / TestFlight upload are being prepared; this status will be updated after completion. Local distribution outputs go in `release/2.6.1/` and are excluded from Git.
+
+## History: 2.6.0 build and upload status
 
 On 2026-10-17, a clean frontend build, security/sync/localization/attachment regressions and a signed Simulator build passed, followed by successful manual testing. The Release archive and IPA were generated, and 2.6.0 (49) was successfully uploaded to App Store Connect. Apple was processing the package at upload completion; consult the console for subsequent TestFlight availability and App Store review status.
 

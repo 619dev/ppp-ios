@@ -14,7 +14,7 @@ import { PRESENTATION_CODECS, type PresentationCodecId } from '../crypto/present
 import { disablePresentationCrypto, enablePresentationCrypto, getPresentationSettings, isPresentationUnlocked, lockPresentationCrypto, unlockPresentationCrypto, updatePresentationSettings } from '../crypto/presentationCrypto'
 
 type SubView = null | 'password' | 'avatar' | '2fa' | 'sessions' | 'language' | 'fingerprint' | 'myqr' | 'proxy' | 'message-privacy'
-const APP_VERSION = '2.6.0'
+const APP_VERSION = '2.6.1'
 
 export default function Profile() {
   const { t } = useI18n()
@@ -204,7 +204,7 @@ export default function Profile() {
         </div>
 
         <div style={{
-          padding: '0 16px max(24px, env(safe-area-inset-bottom))',
+          padding: '0 16px max(24px, var(--safe-bottom))',
           textAlign: 'center', color: 'var(--text-muted)',
           fontSize: 12, opacity: 0.65,
         }}>

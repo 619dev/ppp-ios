@@ -285,7 +285,8 @@ export default function Login() {
 
   return (
     <div className="login-page">
-      <div className="login-card">
+      <div className="login-card login-card--primary">
+        <div className="login-brand">
         <div className="login-logo">
           <img src="/icons/icon-512.png" alt="PaperPhonePlus" className="login-logo-img" />
         </div>
@@ -312,6 +313,8 @@ export default function Login() {
           </div>
         </div>
 
+        </div>
+        <div className="login-fields">
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="input-group">
             <div className="server-url-input">
@@ -653,6 +656,7 @@ export default function Login() {
           <a onClick={() => navigate('/terms')}>{t('terms.title')}</a>
           <span style={{ opacity: 0.3 }}>|</span>
           <a onClick={() => navigate('/privacy')}>{t('privacy.title')}</a>
+        </div>
         </div>
       </div>
     </div>

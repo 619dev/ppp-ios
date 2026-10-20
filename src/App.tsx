@@ -35,6 +35,17 @@ import { getPendingSharedFile } from './api/sharedFile'
 import { useI18n } from './hooks/useI18n'
 
 function ProtectedLayout() {
+  const [wideWorkspace, setWideWorkspace] = useState(false)
+  const { t } = useI18n()
+  useEffect(() => {
+    const shell = document.getElementById('app-shell')
+    if (!shell) return
+    const update = () => setWideWorkspace(shell.clientWidth >= 760 && shell.clientHeight >= 460)
+    const observer = new ResizeObserver(update)
+    observer.observe(shell)
+    update()
+    return () => observer.disconnect()
+  }, [])
   useSocket()
   useAutoDeleteCleanup()
   const totalUnread = useStore(state =>
@@ -68,8 +79,17 @@ function ProtectedLayout() {
   return (
     <CallProvider>
       <GroupCallProvider>
+        <div className={`adaptive-workspace${wideWorkspace ? ' is-wide' : ''}`}>
+          {wideWorkspace && <aside className="workspace-sidebar" aria-label={t('chats.title')}>
+            <Chats />
+            <TabBar alwaysVisible />
+          </aside>}
+          <main className="workspace-main">
         <Routes>
-          <Route path="/chats" element={<Chats />} />
+          <Route path="/chats" element={wideWorkspace ? <div className="workspace-welcome">
+            <div className="workspace-welcome-mark">PaperPhonePlus</div>
+            <p>{t('chats.empty_hint')}</p>
+          </div> : <Chats />} />
           <Route path="/chat/:id" element={<Chat />} />
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/discover" element={<Discover />} />
@@ -83,7 +103,9 @@ function ProtectedLayout() {
           <Route path="/share" element={<ShareTarget />} />
           <Route path="*" element={<Navigate to="/chats" replace />} />
         </Routes>
-        <TabBar />
+        {!wideWorkspace && <TabBar />}
+          </main>
+        </div>
         <CallOverlay />
         <GroupCallOverlay />
         <NotificationToast />
@@ -117,6 +139,11 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
+    if (isNativePlatform()) {
+      import('@capacitor/status-bar').then(({ StatusBar, Style }) =>
+        StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light })
+      ).catch(() => undefined)
+    }
   }, [theme])
 
   // Do not mount chats/socket code until all sensitive state has been restored

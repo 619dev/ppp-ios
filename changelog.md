@@ -4,6 +4,12 @@ All notable changes and new features are recorded here. Historical entries below
 
 所有重要版本改动和新特性统一记录于此。下方历史条目由仓库原有文档迁移而来。
 
+## 2.6.1
+
+- 主应用、分享扩展及个人信息页底部版本号统一为 2.6.1，iOS build 50。
+- 补齐 iOS 27 Scene 生命周期；调整 iPhone 17 系列及 Duo 的安全区域、全屏背景与宽屏分栏布局，修复白色空白边带。
+- 本地开发版本，尚未归档或上传 App Store Connect；沿用 2.6.0 服务端协议。
+
 ## 2.6.0
 
 - 个人信息页底部版本号为 `PaperPhonePlus v2.6.0`；更新中英文说明及 iOS 测试文档，修正群加密、身份验证、后量子协议范围和测试路径说明。
