@@ -12,7 +12,7 @@
 
 The complete release history has moved to [changelog.md](changelog.md).
 
-Current version: **2.6.1** (iOS build 50). Adds **iPhone Duo / iOS 27.1** layouts for folded, partially open and fully open displays, updates iPhone 17 family layouts on iOS 27, removes white safe-area bands, and adopts the scene lifecycle required by iOS 27. Messaging, identity verification and group-key protocols remain compatible with the 2.6.0 server.
+Version **2.6.5** (iOS build 51) fixes friendship synchronization and updates group Sender Key encryption and signature verification. It retains adaptive layouts for iPhone Duo on iOS 27.1 and the iPhone 17 family on iOS 27.
 
 ### iPhone Duo and iPhone 17 family support
 
@@ -36,7 +36,7 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 | Feature | Description |
 |---------|-------------|
 | 🔐 End-to-End Encryption | Stateless ECDH + XSalsa20-Poly1305, per-message ephemeral keys, forward secrecy |
-| ✅ Identity Verification and Signatures | Ed25519-signed private/group messages; mutual verification using the shared text appearance password, with trust revoked on key changes |
+| ✅ Identity Verification and Signatures | Ed25519-signed private/group messages; private mutual verification using the shared text appearance password, with trust revoked on key changes |
 | 🗝️ Secure Local Keys | Identity and group Sender Keys are held in the iOS Keychain; chat caches use a device-bound AES-256-GCM key |
 | 📹 Video/Voice Calls | LiveKit SFU-based private and group voice/video calls |
 | 🧑‍🏫 Meeting Controls | Host mute-all, discussion/lecture modes, participant list, and speaking status |
@@ -60,26 +60,27 @@ This project uses [Capacitor](https://capacitorjs.com/) to package the React + T
 
 ## 🔐 Extra-encrypted text appearance: design and security boundary
 
-This feature is **extra insurance on top of the existing end-to-end encryption (E2EE)**. It does not replace E2EE with a visual encoding, and it never bypasses or weakens the original encryption. Signed private messages in 2.6.0 use X25519 key agreement and XSalsa20-Poly1305 encryption; groups use authenticated Sender Keys. Both paths bind Ed25519 message signatures. Identity private keys and group Sender Keys remain protected by iOS Keychain.
+This feature is **extra insurance on top of the existing end-to-end encryption (E2EE)**. It does not replace E2EE with a visual encoding, and it never bypasses or weakens the original encryption. Signed private messages use X25519 key agreement and XSalsa20-Poly1305 encryption; groups use authenticated Sender Keys. Both paths bind Ed25519 message signatures. Identity private keys and group Sender Keys remain protected by iOS Keychain.
 
-When enabled, every message is processed in this order:
+When enabled, every private message is processed in this order:
 
-1. The sender first protects the message body with the extra password shared by both participants or by all group members. PBKDF2-SHA-256 (210,000 iterations and a random salt) derives an AES-256-GCM key; every message has an independent random IV and an authentication tag for integrity.
+1. The sender first protects the message body with the extra password shared by both participants. PBKDF2-SHA-256 (210,000 iterations and a random salt) derives an AES-256-GCM key; every message has an independent random IV and an authentication tag for integrity.
 2. The complete extra-encryption frame (version, salt, IV, and ciphertext) is then encoded with one of eight selectable text appearances. This is not merely decorative character substitution: the visible characters carry the extra encrypted ciphertext.
-3. That appearance ciphertext then enters the project's original encryption path: private-chat E2EE or group Sender Key encryption. The server still receives the original E2EE/Sender-Key ciphertext plus metadata required for delivery.
-4. The recipient reverses the order: first decrypt the original E2EE/Sender-Key layer, then decode the text-appearance frame and decrypt the body with the extra password.
+3. That appearance ciphertext then enters the project's original encryption path: private-chat E2EE. The server still receives the original E2EE ciphertext plus metadata required for delivery.
+4. The recipient reverses the order: first decrypt the original E2EE layer, then decode the text-appearance frame and decrypt the body with the extra password.
 
-The extra password is never uploaded, synchronized automatically, or distributed by the server. Both people in a private chat must set the same password; every group member who needs to read the plaintext must also set that same password. Text appearances do not need to match: every message carries its own appearance identifier, so the recipient automatically detects and decodes the sender's choice. For example, one person may send Buddhist text while another sends Hangul; if the extra password matches, both decrypt normally. A user's appearance setting controls only the ciphertext appearance of messages they send. If the password is missing, locked, or different, messages are still sent and received normally and the original E2EE layer still decrypts successfully, but the app can display only the appearance ciphertext—not the original text.
+The extra password is never uploaded, synchronized automatically, or distributed by the server. Both people in a private chat must set the same password. Text appearances do not need to match: every message carries its own appearance identifier, so the recipient automatically detects and decodes the sender's choice. For example, one person may send Buddhist text while another sends Hangul; if the extra password matches, both decrypt normally. A user's appearance setting controls only the ciphertext appearance of messages they send. If the password is missing, locked, or different, messages are still sent and received normally and the original E2EE layer still decrypts successfully, but the app can display only the appearance ciphertext—not the original text.
 
 The app does not persist the extra password. While unlocked it exists only in the current process memory; locally, the app stores only a random salt and AES-GCM verification data used to check whether an entered password is correct. Users can lock immediately or automatically 5, 15, 30, or 60 minutes after the app leaves the foreground. This layer adds an independent shared secret beyond E2EE; it does not replace a strong password, device lock, or system secure storage, and it cannot provide absolute protection on a fully compromised device while the password remains in memory.
 
 After sign-in and local secure-state restoration, the app displays an extra-password dialog whenever Message privacy is enabled but the current process is still locked. A correct password restores plaintext display; an incorrect password preserves the locked state and shows an error; users may also cancel and continue browsing appearance ciphertext. The dialog returns after an immediate lock or once the configured background auto-lock interval expires.
 
-## Verification and upgrade (2.6.0 protocol)
+## Friendships, group encryption and upgrades
 
-- The Profile footer displays `PaperPhonePlus v2.6.1`; both the app and Share Extension use 2.6.1 (build 50).
-- Upgrade the server and all participating clients together. Contacts set and unlock the same text appearance password and complete a private challenge/receipt handshake. Green badges reflect local verification; changed identity/signing keys require offline confirmation and re-verification.
-- Establish group members' identities through private verification first. Group signatures bind the group, sender, epoch and ciphertext. Missing historical keys leave ciphertext pending recovery; previously lost keys cannot be recreated.
+- The Profile footer displays `PaperPhonePlus v2.6.5`. The app and Share Extension both use 2.6.5 (build 51).
+- Deploy an upstream server revision containing `d3e95fe` and `0d65d79`, and upgrade participating group clients together. Server startup repairs one-sided accepted friendships. User profiles support sending friend requests and removing a friendship from both lists. The client refreshes friends on `friendship_changed` and reconnect.
+- New group messages use Sender Key encryption and Ed25519 signatures. Group member keys come from the server; live messages also check current membership and key epoch. Group messaging works without private verification or an unlocked text appearance password. Older group messages with text appearance encryption still need their original password, and history with missing Sender Keys remains pending recovery.
+- Private contacts complete mutual identity verification with a shared text appearance password. Green private identity badges reflect local trust records. Changed identity or signing keys require offline confirmation and re-verification.
 - Keychain holds trust records, identity private keys and group keys. Device-key-encrypted offline caches are persisted before sync cursors advance, and signatures are rechecked after restart.
 - The registration API's `kem_pub` contains an Ed25519 signing key. The signed path does not provide ML-KEM post-quantum key agreement. Message signatures do not end-to-end encrypt uploaded attachment bytes.
 - See [test instructions](tests/README.md) for regression commands and manual acceptance, and [the changelog](changelog.md) for preserved release history.
@@ -226,11 +227,9 @@ Installing over the existing simulator app preserves its login state and Keychai
 
 ---
 
-## 2.6.1 build and upload status
+## 2.6.5 build and upload status
 
-On 2026-10-20, a clean frontend build, Capacitor sync and locally signed Pro Max / iOS 27.0 Simulator build passed. The app launched and preserved existing account data and Keychain. Security, sync, attachment and eight-language regressions passed. Login layout checks covered all three Duo fold states; hardware and complete two-client acceptance boundaries are documented in the test notes.
-
-The signed 2.6.1 (50) archive and App Store Connect / TestFlight upload are being prepared; this status will be updated after completion. Local distribution outputs go in `release/2.6.1/` and are excluded from Git.
+The frontend production build, Capacitor sync, security and offline sync regressions, attachment tests, and eight-language checks passed. The iOS Simulator Debug build produced the app and Share Extension at 2.6.5 (51). Two-client integration, the distribution archive, IPA export, and App Store Connect / TestFlight upload are pending. See the [device compatibility and acceptance record](tests/ios-device-compatibility.md) for previous device coverage.
 
 ## History: 2.6.0 build and upload status
 

@@ -210,7 +210,12 @@ export default function App() {
       if (!isPresentationUnlocked()) {
         const messages = useStore.getState().messages
         useStore.setState({ messages: Object.fromEntries(Object.entries(messages).map(([chatId, items]) => [
-          chatId, items.map(({ decrypted, ...message }) => ({ ...message, ...(presentationCiphertextForPlaintext(decrypted) ? { decrypted: presentationCiphertextForPlaintext(decrypted) } : {}) })),
+          chatId, items.map(({ decrypted, ...message }) => {
+            const protectedText = presentationCiphertextForPlaintext(decrypted)
+            if (protectedText) return { ...message, decrypted: protectedText }
+            if (message.group_id && message.header?.startsWith('ppg1.')) return { ...message, decrypted }
+            return message
+          }),
         ])) })
       }
     }

@@ -1,8 +1,8 @@
 # Security and localization tests
 
-Version: **2.6.1**, iOS build **50**. Run from the `ppp-ios` repository root:
+Version **2.6.5**, iOS build **51**. Run from the `ppp-ios` repository root:
 
-2.6.1 includes iPhone Duo / iOS 27.1 support for folded, partially open and fully open layouts, Mac-inspired wide-screen conversation panes, iPhone 17 family layouts, and full-display backgrounds without white safe-area bands. The deployment target remains iOS 16; build with Xcode 27.1 or newer. Detailed layout contracts and honest per-device coverage are in [iPhone compatibility](ios-device-compatibility.md).
+2.6.5 retains iPhone Duo / iOS 27.1 support for folded, partially open and fully open layouts, Mac-inspired wide-screen conversation panes, iPhone 17 family layouts, and full-display backgrounds without white safe-area bands. The deployment target remains iOS 16; build with Xcode 27.1 or newer. Detailed layout contracts and honest per-device coverage are in [iPhone compatibility](ios-device-compatibility.md).
 
 ```bash
 npm ci
@@ -17,6 +17,8 @@ The iOS Simulator build command is in the [main README](../README_EN.md#6-build-
 
 On 2026-10-20, 2.6.1 (50) passed a clean frontend build, Capacitor sync, signature verification and a clean signed Simulator build targeting iPhone 17 Pro Max / iOS 27.0. The app launched into an existing signed-in session. Duo / iOS 27.1 login screenshots were inspected folded, partially open and fully open; this does not establish signed-in split-pane, keyboard, camera, microphone or APNs acceptance on every device.
 
+On 2026-11-13, 2.6.5 (51) passed the frontend build, Capacitor sync, all three test commands, and an unsigned iOS Simulator Debug build. The generated app and Share Extension plists both report 2.6.5 (51). A second Simulator build used `CODE_SIGNING_ALLOWED=YES`, passed signature verification, and launched on iPhone 17 Pro Max / iOS 27.0. The user confirmed manual testing passed.
+
 ## Cryptographic and synchronization coverage
 
 The client security tests use the real sodium signatures,
@@ -27,7 +29,7 @@ exact identity plaintext and AEAD binding, missing/wrong passwords, the complete
 three-message mutual handshake, repeated proofs, stale challenges, unsigned
 messages after pinning and substituted identity keys.
 
-The group suite additionally covers signed, identity-pinned key distribution,
+The group suite additionally covers signed key distribution using server-published identities,
 message type/sender/group/epoch/nonce/ciphertext tampering, authenticated nickname
 display, concurrent key publication, revoked-member exclusion, old-key failure on
 new ciphertext, multi-epoch catch-up, unsigned history labelling and account
@@ -38,7 +40,7 @@ The attachment suite checks authenticated downloads, access-token refresh, exter
 
 ## Server integration test
 
-The server and its MySQL integration fixtures live in the upstream Paperphone-plus repository, not this iOS fork. Use that repository's `client/tests/README.md` for server test setup and deployment migration instructions. The iOS regression commands above do not execute server tests.
+The upstream Paperphone-plus repository contains the server and its MySQL integration fixtures. Use its `client/tests/README.md` for server test setup. Deploy a revision containing `d3e95fe` and `0d65d79`. The server runs `repair_friendships.sql` at startup to restore reciprocal accepted rows. The upstream Compose setup mounts the SQL file and sets `FRIENDSHIP_REPAIR_SQL_PATH`; a rebuilt server can also use its embedded copy. Run server integration checks separately from the iOS suites.
 
 ## Protocol and trust model
 
@@ -67,16 +69,19 @@ migration must add a separate signing-key field and publish real ML-KEM keys.
 
 
 ## Group protocol and upgrade behavior
-Both the server and every client must be upgraded together. New group messages
+Deploy the updated upstream server and upgrade every participating group client together. New group messages
 require signatures and sender-key encryption. Existing unencrypted groups are
 migrated once, and encryption cannot be disabled through the API. Available
 legacy history remains readable with an explicit unsigned warning and no badge.
 Existing encrypted history whose sender key was already lost before this change
 cannot be recovered cryptographically.
 
-Every group participant's identity must first be established through the private
-password-authenticated handshake. No server-provided signing key is silently
-trusted. The group message signature covers group ID, sender ID, key epoch,
+Sender Key distributions and group signatures use identities published by the
+server. Live group messages check the current member list and epoch. History
+uses the sender's published user keys and the exact historical Sender Key.
+Members can exchange new group messages with the private text appearance password
+locked or without completing a private handshake. Older messages protected by
+that extra password still require it. The group message signature covers group ID, sender ID, key epoch,
 client message ID, message type, identity/signing keys, nonce, nickname and
 ciphertext. Only successful signature verification produces a green message badge;
 missing decryption keys keep the content locked and eligible for retry. Badges are not loaded as trusted state from the encrypted message cache.
@@ -87,7 +92,7 @@ must cover exactly the current recipients, including an encrypted self copy,
 and each sender can publish only once per epoch. The same lock serializes sends
 and uploads against leave/kick/join. Online clients rotate on notification;
 offline clients discover the durable epoch when reconnecting and before sending.
-If an identity is unverified, sending remains blocked with a verification prompt.
+New key distribution requires published encryption and signing keys for the current recipients.
 
 Historical distributions for continuing recipients are retained by epoch,
 including distributions authored by members who later leave. All distributions
@@ -103,7 +108,7 @@ Catch-up uses server_seq, not session.last_active. A short database barrier
 serializes message allocation/commit with sync reads so a global cursor cannot
 skip an uncommitted lower sequence. The client paginates to completion, retains
 ciphertexts awaiting keys, selects exact historical key versions, retries after
-key/identity recovery, deduplicates replays and saves its ciphertext cache before
+key recovery, deduplicates replays and saves its ciphertext cache before
 advancing the account-scoped cursor. Group history also paginates by immutable sequence rather than timestamps,
 with no fixed total-history cap. The existing auto-delete retention remains
 in effect; already-expired messages are intentionally unavailable.
@@ -115,14 +120,22 @@ and replays relevant signed verification receipts from history. An unlocked
 presentation password resumes or initiates a pending handshake automatically.
 Repeated opens share an in-flight refresh and preserve the existing challenge;
 automatic retries are throttled. Key changes revoke trust without replacing the
-pin. Opening the group member list refreshes the member-key snapshot and checks
-each member against the same trust records, without starting group-wide private
-handshakes. Fresh keys propagate to existing contact caches. Both views refresh
-on focus/visibility and update labels and badges on trust changes.
+pin. Opening the group member list refreshes the member-key snapshot and
+propagates fresh keys to existing contact caches. Both views refresh on
+focus/visibility. Private profiles update their verification labels and badges
+when trust changes.
+
+## Friendship acceptance
+
+Use two accounts on the updated server. Verify an existing one-sided accepted
+friendship is visible to both accounts after server startup. From a profile, remove
+the friendship and confirm both online lists refresh. Reconnect an offline
+client and confirm its list refreshes. Send a new request, accept it on the other
+account, and verify both contact lists and pending requests update.
 
 ## Eight-language validation
 
-Run `npm run test:i18n` from the repository root to validate all 92 security-related text keys
+Run `npm run test:i18n` from the repository root to validate all security-related text keys
 in Chinese, English, Japanese, Korean, French, German, Russian and Spanish.
 The suite checks explicit coverage (without fallback), duplicate keys,
 placeholder consistency, current-language error rendering and verbatim handling
@@ -131,7 +144,7 @@ of protocol constants and user-supplied text.
 
 ## Manual acceptance and boundaries
 
-Use two compatible native clients to verify password setup/unlock, both directions of the handshake, profile refresh, focus/visibility refresh and changed-key rejection. Reopen profiles while verification is pending to confirm that challenges survive and retries are throttled. Open the group member list to check refreshed trust, then exercise leave/kick, offline reconnect and pending-key recovery. Check all eight languages, especially interpolated errors, verification prompts and the green badge's meaning.
+Use two compatible native clients to verify password setup/unlock, both directions of the handshake, profile refresh, focus/visibility refresh and changed-key rejection. Reopen profiles while verification is pending to confirm that challenges survive and retries are throttled. Exchange group messages with two accounts that have never completed a private handshake and with the text appearance password locked. Check signed and unsigned history, older messages protected by the extra password, key rotation after leave/kick, offline reconnect and pending-key recovery. Check all eight languages, especially interpolated errors, verification prompts and the green badge's meaning.
 
 Version 2.6.0 (build 49) was archived, exported and successfully uploaded to App Store Connect on 2026-10-17; Apple processing was pending at upload completion. Upload success does not establish App Store approval or availability. Tests of this shared source do not validate published native clients or Docker images. Local caches retain at most 2,000 messages per conversation; server-side auto-delete and attachment retention remain applicable. Message signing does not end-to-end encrypt uploaded file bytes, and no upgrade can recreate previously lost keys.
 

@@ -4,6 +4,13 @@ All notable changes and new features are recorded here. Historical entries below
 
 所有重要版本改动和新特性统一记录于此。下方历史条目由仓库原有文档迁移而来。
 
+## 2.6.5
+
+- 同步上游好友关系修复和群聊加密模式（`d3e95fe`、`0d65d79`、`8b364e5`）。个人资料支持添加和双向删除好友，关系变更和重连会刷新列表。旧数据库需由升级后的上游服务端执行修复。
+- 群聊使用服务端公布的成员公钥分发 Sender Key 并验证签名，私聊身份验证和文本外观密码独立于新群消息。旧群消息的额外密码仍可用于解密对应历史。
+- 主应用、分享扩展、客户端包和个人信息页底部版本统一为 2.6.5，iOS build 51。正式归档和上传尚未执行。
+- Updated friendship synchronization, group Sender Key encryption and signature verification. Upgraded upstream servers repair one-sided accepted friendships at startup. Private password verification remains independent of group messaging.
+
 ## 2.6.1
 
 - 主应用、分享扩展及个人信息页底部版本号统一为 2.6.1，iOS build 50。
