@@ -4,11 +4,20 @@ All notable changes and new features are recorded here. Historical entries below
 
 所有重要版本改动和新特性统一记录于此。下方历史条目由仓库原有文档迁移而来。
 
+## 2.6.6
+
+- 2026-11-19：用户确认手动测试通过。
+
+- 吸收公共前端 `79746d7`：图片、视频、音频及附件持久缓存，按账号隔离缓存；朋友圈和时间线媒体展示、视频封面及列表滚动位置恢复改进。保留 iOS Keychain、通知、分享扩展与 Duo 自适应布局。
+- 主应用、分享扩展、客户端包与个人信息页底部统一为 2.6.6，iOS build 52。
+- 2026-11-19：清理后前端构建、Capacitor 同步、全部五项测试命令、Duo 签名 Debug 构建和签名校验通过；使用 `CODE_SIGNING_ALLOWED=YES`。已安装启动 Duo 并确认全展开登录页正常显示，尚未正式归档或上传。
+- Absorbed persistent media caching and timeline improvements from the shared client; retained native iOS integrations and adaptive layouts.
+
 ## 2.6.5
 
 - 同步上游好友关系修复和群聊加密模式（`d3e95fe`、`0d65d79`、`8b364e5`）。个人资料支持添加和双向删除好友，关系变更和重连会刷新列表。旧数据库需由升级后的上游服务端执行修复。
 - 群聊使用服务端公布的成员公钥分发 Sender Key 并验证签名，私聊身份验证和文本外观密码独立于新群消息。旧群消息的额外密码仍可用于解密对应历史。
-- 主应用、分享扩展、客户端包和个人信息页底部版本统一为 2.6.5，iOS build 51。正式归档和上传尚未执行。
+- 主应用、分享扩展、客户端包和个人信息页底部版本统一为 2.6.5，iOS build 51。2026-11-13 模拟器手动测试通过，清理构建缓存后使用 `CODE_SIGNING_ALLOWED=YES` 完成正式归档和 IPA 导出，并成功上传 App Store Connect。上传完成时 Apple 正在处理。
 - Updated friendship synchronization, group Sender Key encryption and signature verification. Upgraded upstream servers repair one-sided accepted friendships at startup. Private password verification remains independent of group messaging.
 
 ## 2.6.1

@@ -1,13 +1,14 @@
 # Security and localization tests
 
-Version **2.6.5**, iOS build **51**. Run from the `ppp-ios` repository root:
+Version **2.6.6**, iOS build **52**. Run from the `ppp-ios` repository root:
 
-2.6.5 retains iPhone Duo / iOS 27.1 support for folded, partially open and fully open layouts, Mac-inspired wide-screen conversation panes, iPhone 17 family layouts, and full-display backgrounds without white safe-area bands. The deployment target remains iOS 16; build with Xcode 27.1 or newer. Detailed layout contracts and honest per-device coverage are in [iPhone compatibility](ios-device-compatibility.md).
+2.6.6 retains iPhone Duo / iOS 27.1 support for folded, partially open and fully open layouts, Mac-inspired wide-screen conversation panes, iPhone 17 family layouts, and full-display backgrounds without white safe-area bands. The deployment target remains iOS 16; build with Xcode 27.1 or newer. Detailed layout contracts and honest per-device coverage are in [iPhone compatibility](ios-device-compatibility.md).
 
 ```bash
 npm ci
 npm run test:security
 npm run test:attachments
+npm run test:media-cache
 npm run test:i18n
 npm run build
 npx cap sync ios
@@ -18,6 +19,12 @@ The iOS Simulator build command is in the [main README](../README_EN.md#6-build-
 On 2026-10-20, 2.6.1 (50) passed a clean frontend build, Capacitor sync, signature verification and a clean signed Simulator build targeting iPhone 17 Pro Max / iOS 27.0. The app launched into an existing signed-in session. Duo / iOS 27.1 login screenshots were inspected folded, partially open and fully open; this does not establish signed-in split-pane, keyboard, camera, microphone or APNs acceptance on every device.
 
 On 2026-11-13, 2.6.5 (51) passed the frontend build, Capacitor sync, all three test commands, and an unsigned iOS Simulator Debug build. The generated app and Share Extension plists both report 2.6.5 (51). A second Simulator build used `CODE_SIGNING_ALLOWED=YES`, passed signature verification, and launched on iPhone 17 Pro Max / iOS 27.0. The user confirmed manual testing passed.
+
+On 2026-11-19, 2.6.6 (52) passed a clean frontend build, Capacitor sync, security/sync, attachment, eight-language and media-cache suites. A fresh DerivedData Debug build targeting iPhone Duo / iOS 27.1 passed with `CODE_SIGNING_ALLOWED=YES` using Xcode 27.2 / iOS 27.2 SDK. App and Share Extension version fields are 2.6.6 (52), and deep strict signature verification passed. Release archival and upload have not been performed. The build was installed and launched on Duo; the fully open two-column login page was visually confirmed. The user confirmed manual testing passed on 2026-11-19; detailed per-fold-state screenshot coverage was not recorded.
+
+## 2.6.6 shared-client update (2026-11-19)
+
+Absorbs shared client `79746d7`. The media-cache suite verifies persistent bytes, concurrent download deduplication, reconnect refresh, offline fallback, account isolation and unavailable storage. Timeline retains its mounted list and restores scrolling after detail/composer navigation; uploads show progress and block publishing until completion. Native Keychain and asynchronous ciphertext cache flushing remain intact.
 
 ## Cryptographic and synchronization coverage
 

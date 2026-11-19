@@ -1,6 +1,6 @@
 # iPhone adaptive layout validation
 
-Version **2.6.5**, build **51** retains iPhone Duo adaptation for folded, partially open and fully open displays.
+Version **2.6.6**, build **52** retains iPhone Duo adaptation for folded, partially open and fully open displays.
 
 Target: iPhone Duo on iOS 27.1, and iPhone 17 / 17 Pro / 17 Pro Max / 17e / Air on iOS 27 (including the 27.0.1 device update). Keep the deployment target at iOS 16; build with Xcode 27.1 or newer for Duo display support.
 
@@ -20,6 +20,12 @@ Duo / iOS 27.1 (24A94425): final UI launched and visually inspected on outer, op
 
 iPhone 17 Pro Max / iOS 27.0 (24A434): after clearing build caches and old build directories, a clean signed 2.6.1 (50) build passed, the app and extension version fields were checked, and the app launched into an existing account's Discover page. Data and Keychain were preserved. The other four models have not completed final-build functional acceptance. Apple did not offer a downloadable 27.0.1 simulator; validate that exact patch on a physical device. The installed 27.1 runtime only advertises iPhone Duo as a compatible device.
 
+## 2.6.6 validation record (2026-11-19)
+
+On 2026-11-19, 2.6.6 (52) passed a clean frontend build, Capacitor sync, security/sync, attachment, eight-language and media-cache suites. A fresh DerivedData Debug build targeting iPhone Duo / iOS 27.1 passed with `CODE_SIGNING_ALLOWED=YES` using Xcode 27.2 / iOS 27.2 SDK. App and Share Extension version fields are 2.6.6 (52), and deep strict signature verification passed. Release archival and upload have not been performed. The build was installed and launched on Duo; the fully open two-column login page was visually confirmed. The user confirmed manual testing passed on 2026-11-19; detailed per-fold-state screenshot coverage was not recorded.
+
+Xcode 27.2 exposes the running Duo through Device Hub. Use Closed, Partially Open and Open controls for screenshot capture; keep existing simulator data and Keychain.
+
 ## 2.6.5 validation record (2026-11-13)
 
 A signed 2.6.5 (51) build launched after an in-place install on iPhone 17 Pro Max / iOS 27.0. The user confirmed manual testing passed.
@@ -29,7 +35,7 @@ A signed 2.6.5 (51) build launched after an in-place install on iPhone 17 Pro Ma
 1. On each phone, launch with and without an existing account. Verify the header, navigation, chat composer and home-indicator area.
 2. Focus login fields and the chat composer with the software keyboard enabled. The viewport should shrink above a docked keyboard, and the focused field, submit/send controls and modal content should remain reachable by scrolling. Dismiss the keyboard and confirm the viewport expands again.
 3. On Duo, repeat closed, open and partially open, in both rotations. Fold while typing and while a modal is open; preserve input and navigation state.
-4. Confirm the Profile footer displays `PaperPhonePlus v2.6.5` and that the app and Share Extension report 2.6.5 (51). Open the attachment/export picker, QR scanner, notifications, privacy unlock and incoming/outgoing call UI. Verify long translated labels and large accessibility text.
+4. Confirm the Profile footer displays `PaperPhonePlus v2.6.6` and that the app and Share Extension report 2.6.6 (52). Open the attachment/export picker, QR scanner, notifications, privacy unlock and incoming/outgoing call UI. Verify long translated labels and large accessibility text.
 5. Exercise camera, microphone, APNs, background/foreground and active calls on physical devices. Simulator launch screenshots do not establish those hardware and server-backed behaviors.
 
 References: [Apple Duo preparation](https://developer.apple.com/iphone-duo/prepare/), [UIKit scene migration](https://developer.apple.com/documentation/uikit/transitioning-to-the-uikit-scene-based-life-cycle).

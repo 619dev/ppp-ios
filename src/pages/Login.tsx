@@ -1,3 +1,4 @@
+import { CachedImage } from '../components/CachedMedia'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { get, post, put } from '../api/http'
@@ -288,7 +289,7 @@ export default function Login() {
       <div className="login-card login-card--primary">
         <div className="login-brand">
         <div className="login-logo">
-          <img src="/icons/icon-512.png" alt="PaperPhonePlus" className="login-logo-img" />
+          <CachedImage src="/icons/icon-512.png" alt="PaperPhonePlus" className="login-logo-img" />
         </div>
         <h1 className="login-title">{t('app.name')}</h1>
         <p className="login-subtitle">{t('auth.subtitle')}</p>

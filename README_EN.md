@@ -12,7 +12,7 @@
 
 The complete release history has moved to [changelog.md](changelog.md).
 
-Version **2.6.5** (iOS build 51) fixes friendship synchronization and updates group Sender Key encryption and signature verification. It retains adaptive layouts for iPhone Duo on iOS 27.1 and the iPhone 17 family on iOS 27.
+Version **2.6.6** (iOS build 52) adds persistent media caching and improves Timeline uploads and scroll restoration. It retains adaptive layouts for iPhone Duo on iOS 27.1 and the iPhone 17 family on iOS 27.
 
 ### iPhone Duo and iPhone 17 family support
 
@@ -77,7 +77,7 @@ After sign-in and local secure-state restoration, the app displays an extra-pass
 
 ## Friendships, group encryption and upgrades
 
-- The Profile footer displays `PaperPhonePlus v2.6.5`. The app and Share Extension both use 2.6.5 (build 51).
+- The Profile footer displays `PaperPhonePlus v2.6.6`. The app and Share Extension both use 2.6.6 (build 52).
 - Deploy an upstream server revision containing `d3e95fe` and `0d65d79`, and upgrade participating group clients together. Server startup repairs one-sided accepted friendships. User profiles support sending friend requests and removing a friendship from both lists. The client refreshes friends on `friendship_changed` and reconnect.
 - New group messages use Sender Key encryption and Ed25519 signatures. Group member keys come from the server; live messages also check current membership and key epoch. Group messaging works without private verification or an unlocked text appearance password. Older group messages with text appearance encryption still need their original password, and history with missing Sender Keys remains pending recovery.
 - Private contacts complete mutual identity verification with a shared text appearance password. Green private identity badges reflect local trust records. Changed identity or signing keys require offline confirmation and re-verification.
@@ -227,9 +227,15 @@ Installing over the existing simulator app preserves its login state and Keychai
 
 ---
 
+## 2.6.6
+
+Version 2.6.6 (build 52) absorbs shared client `79746d7`: persistent media caching, Moments/Timeline media display, video covers and scroll restoration. Native iOS integrations and Duo layouts are retained. Release archival and upload have not been performed.
+
+On 2026-11-19, 2.6.6 (52) passed a clean frontend build, Capacitor sync, security/sync, attachment, eight-language and media-cache suites. A fresh DerivedData Debug build targeting iPhone Duo / iOS 27.1 passed with `CODE_SIGNING_ALLOWED=YES` using Xcode 27.2 / iOS 27.2 SDK. App and Share Extension version fields are 2.6.6 (52), and deep strict signature verification passed. Release archival and upload have not been performed. The build was installed and launched on Duo; the fully open two-column login page was visually confirmed. The user confirmed manual testing passed on 2026-11-19; detailed per-fold-state screenshot coverage was not recorded. Xcode 27.2 displays Duo in Device Hub; use Closed / Partially Open / Open for screenshot capture.
+
 ## 2.6.5 build and upload status
 
-The frontend production build, Capacitor sync, security and offline sync regressions, attachment tests, and eight-language checks passed. The iOS Simulator Debug build produced the app and Share Extension at 2.6.5 (51). Two-client integration, the distribution archive, IPA export, and App Store Connect / TestFlight upload are pending. See the [device compatibility and acceptance record](tests/ios-device-compatibility.md) for previous device coverage.
+The frontend production build, Capacitor sync, security and offline sync regressions, attachment tests, and eight-language checks passed. The signed iOS Simulator Debug build and manual testing passed. On 2026-11-13, a clean Release archive and IPA export completed with `CODE_SIGNING_ALLOWED=YES`. Both the app and Share Extension report 2.6.5 (51). The build was successfully uploaded to App Store Connect and was processing at upload completion. Local distribution artifacts are in `release/2.6.5/`. See the [device compatibility and acceptance record](tests/ios-device-compatibility.md) for previous device coverage.
 
 ## History: 2.6.0 build and upload status
 
