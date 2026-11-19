@@ -229,7 +229,7 @@ xcodebuild \
 
 ## 2.6.6
 
-当前 2.6.6（build 52）吸收公共前端 `79746d7`：媒体持久缓存、朋友圈与时间线媒体展示、视频封面及滚动位置恢复。保留 iOS 原生能力与 Duo 布局。正式归档和上传尚未执行。
+当前 2.6.6（build 52）吸收公共前端 `79746d7`：媒体持久缓存、朋友圈与时间线媒体展示、视频封面及滚动位置恢复。保留 iOS 原生能力与 Duo 布局。2026-11-19 已使用 `CODE_SIGNING_ALLOWED=YES` 完成干净 Release 归档和 IPA 导出，主应用与分享扩展均为 2.6.6（52），签名校验通过。已成功上传 App Store Connect；上传完成时等待 Apple 开始处理。正式产物位于 `release/2.6.6/`，不提交 Git。
 
 2026-11-19：已清理旧前端产物、TypeScript 增量缓存及旧 iOS 临时构建目录，重新构建并同步 Capacitor。安全/同步、附件、八语言及媒体缓存测试通过。使用全新 DerivedData 和 `CODE_SIGNING_ALLOWED=YES` 的 Duo 签名 Debug 构建通过，主应用与分享扩展版本、深度签名校验均通过。Xcode 27.2 通过 Device Hub 显示 Duo，可使用 Closed / Partially Open / Open 控件切换截图状态；已覆盖安装并启动 Duo，目视确认全展开双栏登录页正常显示，可继续截图；用户已于 2026-11-19 确认手动测试通过。
 

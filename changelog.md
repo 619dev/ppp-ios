@@ -10,7 +10,7 @@ All notable changes and new features are recorded here. Historical entries below
 
 - 吸收公共前端 `79746d7`：图片、视频、音频及附件持久缓存，按账号隔离缓存；朋友圈和时间线媒体展示、视频封面及列表滚动位置恢复改进。保留 iOS Keychain、通知、分享扩展与 Duo 自适应布局。
 - 主应用、分享扩展、客户端包与个人信息页底部统一为 2.6.6，iOS build 52。
-- 2026-11-19：清理后前端构建、Capacitor 同步、全部五项测试命令、Duo 签名 Debug 构建和签名校验通过；使用 `CODE_SIGNING_ALLOWED=YES`。已安装启动 Duo 并确认全展开登录页正常显示，尚未正式归档或上传。
+- 2026-11-19：清理后前端构建、Capacitor 同步、全部五项测试命令、Duo 签名 Debug 构建和签名校验通过；使用 `CODE_SIGNING_ALLOWED=YES`。已安装启动 Duo 并确认全展开登录页正常显示，已完成正式归档、导出并成功上传 App Store Connect，等待 Apple 处理。
 - Absorbed persistent media caching and timeline improvements from the shared client; retained native iOS integrations and adaptive layouts.
 
 ## 2.6.5
