@@ -12,7 +12,7 @@
 
 The complete release history has moved to [changelog.md](changelog.md).
 
-Version **2.6.6** (iOS build 52) adds persistent media caching and improves Timeline uploads and scroll restoration. It retains adaptive layouts for iPhone Duo on iOS 27.1 and the iPhone 17 family on iOS 27.
+Version **2.6.7** (iOS build 53) adds inactivity-based account deletion, password-confirmed deletion and TOTP password recovery.
 
 ### iPhone Duo and iPhone 17 family support
 
@@ -77,7 +77,7 @@ After sign-in and local secure-state restoration, the app displays an extra-pass
 
 ## Friendships, group encryption and upgrades
 
-- The Profile footer displays `PaperPhonePlus v2.6.6`. The app and Share Extension both use 2.6.6 (build 52).
+- The Profile footer displays `PaperPhonePlus v2.6.7`. The app and Share Extension both use 2.6.7 (build 53).
 - Deploy an upstream server revision containing `d3e95fe` and `0d65d79`, and upgrade participating group clients together. Server startup repairs one-sided accepted friendships. User profiles support sending friend requests and removing a friendship from both lists. The client refreshes friends on `friendship_changed` and reconnect.
 - New group messages use Sender Key encryption and Ed25519 signatures. Group member keys come from the server; live messages also check current membership and key epoch. Group messaging works without private verification or an unlocked text appearance password. Older group messages with text appearance encryption still need their original password, and history with missing Sender Keys remains pending recovery.
 - Private contacts complete mutual identity verification with a shared text appearance password. Green private identity badges reflect local trust records. Changed identity or signing keys require offline confirmation and re-verification.
@@ -227,6 +227,14 @@ Installing over the existing simulator app preserves its login state and Keychai
 
 ---
 
+## 2.6.7
+
+Absorbs shared client `43cca72`: Profile account-deletion settings offer 3, 6, 12, 24 or 36 months without login, reset after each successful login. Immediate deletion verifies the current password. Password recovery requires an already enabled authenticator and its current six-digit TOTP code; the new password must contain 6–128 characters, and existing device sessions are revoked. Deploy the matching server supporting `/api/users/account-deletion`, `/api/users/delete`, `/api/auth/reset-password` and `account_deleted` events. Native Keychain, notifications, media caching and adaptive layouts are retained. Package, Profile footer, app and Share Extension use 2.6.7 (build 53).
+
+2026-11-20: clean frontend build, Capacitor sync, security/sync, attachment, media-cache and eight-language tests passed. The Debug build with fresh DerivedData passed with `CODE_SIGNING_ALLOWED=YES`. The user confirmed manual testing passed on iPhone 18 Pro Max / iOS 27.0.
+
+On 2026-11-20, the signed 2.6.7 (53) Release archive and IPA were exported successfully. App Store Connect accepted the upload and reported that the build was processing.
+
 ## 2.6.6
 
 Version 2.6.6 (build 52) absorbs shared client `79746d7`: persistent media caching, Moments/Timeline media display, video covers and scroll restoration. Native iOS integrations and Duo layouts are retained. On 2026-11-19, a clean Release archive and IPA export completed with `CODE_SIGNING_ALLOWED=YES`; the app and Share Extension both report 2.6.6 (52), and signature verification passed. Upload to App Store Connect completed successfully; Apple processing was pending at upload completion. Local distribution artifacts are in `release/2.6.6/` and are excluded from Git.
@@ -327,3 +335,5 @@ See the [LICENSE](LICENSE) file for the full license text.
 - [Capacitor](https://capacitorjs.com/) — Cross-platform native runtime
 - [libsodium](https://doc.libsodium.org/) — Cryptographic library
 - [CRYSTALS-Kyber](https://pq-crystals.org/kyber/) — Post-quantum cryptography
+
+2026-11-20: Installed and launched on iPhone 18 Pro Max / iOS 27.0; the login screen and Forgot password entry were visually confirmed. The user confirmed manual feature testing passed.

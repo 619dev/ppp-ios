@@ -12,7 +12,7 @@
 
 完整版本更新记录已迁移至 [changelog.md](changelog.md)。
 
-当前版本为 **2.6.6**（iOS build 52）。本版增加媒体持久缓存，改进时间线媒体上传与滚动位置恢复，并延续 iPhone Duo / iOS 27.1 和 iPhone 17 系列 / iOS 27 的布局适配。
+当前版本为 **2.6.7**（iOS build 53）。新增自动删除账号、密码确认删除账号及两步验证密码找回。
 
 ### iPhone Duo 与 iPhone 17 系列适配
 
@@ -77,7 +77,7 @@
 
 ## 好友关系、群聊加密与升级
 
-- 个人信息页底部显示 `PaperPhonePlus v2.6.6`；主应用和分享扩展均为 2.6.6（build 52）。
+- 个人信息页底部显示 `PaperPhonePlus v2.6.7`；主应用和分享扩展均为 2.6.7（build 53）。
 - 升级上游服务端至包含 `d3e95fe`、`0d65d79` 的版本，并将参与群聊的客户端一起升级。服务端启动时修复旧数据库中单向接受的好友关系。用户资料页可添加或双向删除好友，客户端收到 `friendship_changed` 或重连时会刷新好友列表。
 - 新群消息使用 Sender Key 加密并以 Ed25519 签名。群成员公钥由服务端公布，在线消息还会校验当前成员和密钥轮次。群聊可在未完成私聊验证、额外密码锁定时收发消息；旧版加过文本外观密码的群消息仍需原密码。缺少历史 Sender Key 时等待恢复。
 - 私聊双方使用同一文本外观密码完成双向身份验证。绿色私聊身份徽章反映本地信任记录；身份或签名密钥变化时需要线下确认并重新验证。
@@ -227,9 +227,17 @@ xcodebuild \
 
 ---
 
+## 2.6.7
+
+吸收公用前端 `43cca72`：个人信息页新增账号删除设置，可选择 3、6、12、24、36 个月未登录后自动删除账号，每次成功登录重新计时；立即删除账号需验证当前密码。登录页支持通过已启用的两步验证应用当前六位验证码重置密码，新密码为 6–128 个字符，重置后旧设备会话退出。服务端需部署支持 `/api/users/account-deletion`、`/api/users/delete`、`/api/auth/reset-password` 和 `account_deleted` 事件的对应更新。保留 iOS Keychain、原生通知、媒体缓存及自适应布局。个人信息页底部、客户端包、主应用与分享扩展统一为 2.6.7（build 53）。
+
+2026-11-20：前端干净构建、Capacitor 同步、安全/同步、附件、媒体缓存和八语言测试通过；全新 DerivedData 的 Debug 编译使用 `CODE_SIGNING_ALLOWED=YES` 并通过。iPhone 18 Pro Max / iOS 27.0 用户确认手工测试通过。
+
+2026-11-20，2.6.7（53）正式归档与 IPA 导出通过，已上传 App Store Connect。上传完成时 Apple 正在处理。
+
 ## 2.6.6
 
-当前 2.6.6（build 52）吸收公共前端 `79746d7`：媒体持久缓存、朋友圈与时间线媒体展示、视频封面及滚动位置恢复。保留 iOS 原生能力与 Duo 布局。2026-11-19 已使用 `CODE_SIGNING_ALLOWED=YES` 完成干净 Release 归档和 IPA 导出，主应用与分享扩展均为 2.6.6（52），签名校验通过。已成功上传 App Store Connect；上传完成时等待 Apple 开始处理。正式产物位于 `release/2.6.6/`，不提交 Git。
+历史版本 2.6.6（build 52）吸收公共前端 `79746d7`：媒体持久缓存、朋友圈与时间线媒体展示、视频封面及滚动位置恢复。保留 iOS 原生能力与 Duo 布局。2026-11-19 已使用 `CODE_SIGNING_ALLOWED=YES` 完成干净 Release 归档和 IPA 导出，主应用与分享扩展均为 2.6.6（52），签名校验通过。已成功上传 App Store Connect；上传完成时等待 Apple 开始处理。正式产物位于 `release/2.6.6/`，不提交 Git。
 
 2026-11-19：已清理旧前端产物、TypeScript 增量缓存及旧 iOS 临时构建目录，重新构建并同步 Capacitor。安全/同步、附件、八语言及媒体缓存测试通过。使用全新 DerivedData 和 `CODE_SIGNING_ALLOWED=YES` 的 Duo 签名 Debug 构建通过，主应用与分享扩展版本、深度签名校验均通过。Xcode 27.2 通过 Device Hub 显示 Duo，可使用 Closed / Partially Open / Open 控件切换截图状态；已覆盖安装并启动 Duo，目视确认全展开双栏登录页正常显示，可继续截图；用户已于 2026-11-19 确认手动测试通过。
 
@@ -327,3 +335,5 @@ APNS_RELAY_KEY=EzmpqftbsENaRUO6BTABxLV96q7RuEDyokXJr1DWdDjL54cLg7yXVUQqydCQvxrX
 - [Capacitor](https://capacitorjs.com/) — 跨平台原生运行时
 - [libsodium](https://doc.libsodium.org/) — 加密库
 - [CRYSTALS-Kyber](https://pq-crystals.org/kyber/) — 后量子密码学
+
+2026-11-20：已安装并启动 iPhone 18 Pro Max / iOS 27.0，已目视确认登录页和“忘记密码？”入口正常显示，用户确认功能手工测试通过。

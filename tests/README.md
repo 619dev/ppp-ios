@@ -1,8 +1,8 @@
 # Security and localization tests
 
-Version **2.6.6**, iOS build **52**. Run from the `ppp-ios` repository root:
+Version **2.6.7**, iOS build **53**. Run from the `ppp-ios` repository root:
 
-2.6.6 retains iPhone Duo / iOS 27.1 support for folded, partially open and fully open layouts, Mac-inspired wide-screen conversation panes, iPhone 17 family layouts, and full-display backgrounds without white safe-area bands. The deployment target remains iOS 16; build with Xcode 27.1 or newer. Detailed layout contracts and honest per-device coverage are in [iPhone compatibility](ios-device-compatibility.md).
+2.6.7 retains iPhone Duo / iOS 27.1 support for folded, partially open and fully open layouts, Mac-inspired wide-screen conversation panes, iPhone 17 family layouts, and full-display backgrounds without white safe-area bands. The deployment target remains iOS 16; build with Xcode 27.1 or newer. Detailed layout contracts and honest per-device coverage are in [iPhone compatibility](ios-device-compatibility.md).
 
 ```bash
 npm ci
@@ -156,3 +156,15 @@ Use two compatible native clients to verify password setup/unlock, both directio
 Version 2.6.0 (build 49) was archived, exported and successfully uploaded to App Store Connect on 2026-10-17; Apple processing was pending at upload completion. Upload success does not establish App Store approval or availability. Tests of this shared source do not validate published native clients or Docker images. Local caches retain at most 2,000 messages per conversation; server-side auto-delete and attachment retention remain applicable. Message signing does not end-to-end encrypt uploaded file bytes, and no upgrade can recreate previously lost keys.
 
 See the [main README](../README_EN.md) and [中文说明](../README.md) for operating requirements. The client suites use cryptographic implementations with mocked transport/persistence; upstream server fixtures use real database/routes with transport signature fixtures. They provide regression coverage, not an independent audit or a native-device UI test.
+
+## 2.6.7 update (2026-11-20)
+
+Absorbs shared client `43cca72`: Profile account-deletion settings offer 3, 6, 12, 24 or 36 months without login, reset after each successful login. Immediate deletion verifies the current password. Password recovery requires an already enabled authenticator and its current six-digit TOTP code; the new password must contain 6–128 characters, and existing device sessions are revoked. Deploy the matching server supporting `/api/users/account-deletion`, `/api/users/delete`, `/api/auth/reset-password` and `account_deleted` events. Native Keychain, notifications, media caching and adaptive layouts are retained. Package, Profile footer, app and Share Extension use 2.6.7 (build 53).
+
+For manual acceptance on iPhone 18 Pro Max / iOS 27.0, Check inactivity-period load/save/retry, password-confirmed deletion and account-deleted logout, recovery with valid/invalid TOTP, mismatched password confirmation and old-session revocation. Verify the Profile footer shows 2.6.7. Server integration and destructive account actions require disposable test accounts; client localization tests cover all eight languages.
+
+2026-11-20: clean frontend build, Capacitor sync, security/sync, attachment, media-cache and eight-language checks passed. A fresh DerivedData Debug build with `CODE_SIGNING_ALLOWED=YES` passed, followed by the final resource build. App and Share Extension plists both report 2.6.7 (53); deep strict signature verification passed.
+
+2026-11-20: Installed and launched on iPhone 18 Pro Max / iOS 27.0; the login screen and Forgot password entry were visually confirmed. The user confirmed manual feature testing passed.
+
+On 2026-11-20, the signed 2.6.7 (53) Release archive and IPA were exported successfully. App Store Connect accepted the upload and reported that the build was processing.

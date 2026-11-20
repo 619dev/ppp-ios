@@ -4,6 +4,13 @@ All notable changes and new features are recorded here. Historical entries below
 
 所有重要版本改动和新特性统一记录于此。下方历史条目由仓库原有文档迁移而来。
 
+## 2.6.7
+
+- 吸收公用前端 `43cca72`：个人信息页新增账号删除设置，可选择 3、6、12、24、36 个月未登录后自动删除账号，每次成功登录重新计时；立即删除账号需验证当前密码。登录页支持通过已启用的两步验证应用当前六位验证码重置密码，新密码为 6–128 个字符，重置后旧设备会话退出。服务端需部署支持 `/api/users/account-deletion`、`/api/users/delete`、`/api/auth/reset-password` 和 `account_deleted` 事件的对应更新。保留 iOS Keychain、原生通知、媒体缓存及自适应布局。个人信息页底部、客户端包、主应用与分享扩展统一为 2.6.7（build 53）。
+- 2026-11-20：清理构建缓存后前端构建、Capacitor 同步、安全/同步、附件、媒体缓存、八语言检查及全新 DerivedData 签名 Debug 编译通过，使用 `CODE_SIGNING_ALLOWED=YES`；主应用与分享扩展均为 2.6.7（53），签名校验通过。iPhone 18 Pro Max / iOS 27.0 用户确认手工验收通过。
+
+- 2026-11-20，2.6.7（53）正式归档与 IPA 导出通过，已上传 App Store Connect。上传完成时 Apple 正在处理。
+
 ## 2.6.6
 
 - 2026-11-19：用户确认手动测试通过。
@@ -212,3 +219,5 @@ All notable changes and new features are recorded here. Historical entries below
 - Temporary server unavailability no longer blocks local secure-state initialization; key synchronization can continue after connectivity is restored.
 
 ---
+
+2026-11-20：已安装并启动 iPhone 18 Pro Max / iOS 27.0，已目视确认登录页和“忘记密码？”入口正常显示，用户确认功能手工测试通过。
